@@ -23,7 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-// connectDB();
+connectDB();
 
 // Middleware
 app.use(cors(corsConfig()));
@@ -133,8 +133,6 @@ app.use('*', (req, res) => {
 // Start server
 const server = app.listen(PORT, () => {
     console.log(`🚀 Radyo Natin API is running on port ${PORT}`);
-    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`📖 API docs: http://localhost:${PORT}/api/docs`);
 });
 
 // Graceful shutdown handling

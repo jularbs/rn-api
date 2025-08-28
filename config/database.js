@@ -11,7 +11,7 @@ const connectDB = async () => {
     }
 
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/radyo-natin', {
+        const conn = await mongoose.connect(process.env.MONGODB_URI, {
             // Mongoose 6+ no longer needs these options as they are default
             // useNewUrlParser: true,
             // useUnifiedTopology: true,
@@ -19,7 +19,7 @@ const connectDB = async () => {
 
         console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
         isConnected = true;
-        
+
         // Set up event listeners only once
         if (!hasEventListeners) {
             // Handle connection events
@@ -50,7 +50,7 @@ const connectDB = async () => {
 
             process.on('SIGINT', gracefulShutdown);
             process.on('SIGTERM', gracefulShutdown);
-            
+
             hasEventListeners = true;
         }
 

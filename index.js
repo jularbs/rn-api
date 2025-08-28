@@ -58,57 +58,9 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// API documentation endpoint
-app.get('/api/docs', createRateLimiter(1000 * 15 * 6, 3), (req, res) => {
-    res.json({
-        title: 'Radyo Natin API Documentation',
-        version: '0.0.1',
-        endpoints: {
-            'GET /api/health': 'Health check endpoint',
-            'POST /api/auth/register': 'Register a new user',
-            'POST /api/auth/login': 'Login user',
-            'GET /api/auth/me': 'Get current user profile',
-            'PUT /api/auth/me': 'Update current user profile',
-            'PATCH /api/auth/change-password': 'Change user password',
-            'POST /api/auth/logout': 'Logout user',
-            'GET /api/auth/verify-token': 'Verify JWT token',
-            'GET /api/users': 'Get all users with pagination (requires auth)',
-            'GET /api/users/:id': 'Get a specific user by ID (requires auth)',
-            'POST /api/users': 'Create a new user (admin only)',
-            'PUT /api/users/:id': 'Update an existing user (owner or admin)',
-            'PATCH /api/users/:id/password': 'Update user password (admin only)',
-            'DELETE /api/users/:id': 'Soft delete a user (admin only)',
-            'GET /api/users/stats/overview': 'Get user statistics (admin only)'
-        },
-        sampleRequest: {
-            authentication: {
-                register: {
-                    method: 'POST',
-                    url: '/api/auth/register',
-                    body: {
-                        firstName: 'John',
-                        lastName: 'Doe',
-                        email: 'john@example.com',
-                        password: 'password123',
-                        phone: '+1234567890'
-                    }
-                },
-                login: {
-                    method: 'POST',
-                    url: '/api/auth/login',
-                    body: {
-                        email: 'john@example.com',
-                        password: 'password123'
-                    }
-                }
-            }
-        }
-    });
-});
-
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', usersRoutes);
+app.use('/api', usersRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

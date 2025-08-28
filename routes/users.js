@@ -1,6 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
-const { validateUser, validateUserUpdate, authenticate, authorize, ownerOrAdmin } = require('../middleware');
+const { authenticate, authorize, ownerOrAdmin } = require('../middleware');
 
 const router = express.Router();
 
@@ -105,7 +105,7 @@ router.get('/:id', authenticate, ownerOrAdmin, async (req, res) => {
 });
 
 // POST /api/users - Create new user (Admin only)
-router.post('/', authenticate, authorize('admin'), validateUser, async (req, res) => {
+router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const userData = req.body;
 
@@ -157,7 +157,7 @@ router.post('/', authenticate, authorize('admin'), validateUser, async (req, res
 });
 
 // PUT /api/users/:id - Update user (Owner or Admin)
-router.put('/:id', authenticate, ownerOrAdmin, validateUserUpdate, async (req, res) => {
+router.put('/:id', authenticate, ownerOrAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;

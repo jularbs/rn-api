@@ -5,9 +5,12 @@ A RESTful API server for managing radio stations built with Express.js.
 ## Features
 
 - 🚀 RESTful API endpoints
-- 🛡️ Request validation and error handling
+- � JWT authentication and authorization
+- 👥 User management with soft delete
+- �🛡️ Request validation and error handling
 - 📝 Request logging middleware
 - ⚡ Rate limiting
+- 🌐 Configurable CORS policy
 - 🔒 Optional API key authentication
 - 📊 Health check endpoint
 - 📖 Built-in API documentation
@@ -157,8 +160,37 @@ Create a `.env` file with the following variables:
 ```env
 NODE_ENV=development
 PORT=3000
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/radyo-natin
+
+# JWT Authentication
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+
+# API Key (optional)
 API_KEY=your_api_key_here
 ```
+
+## CORS Configuration
+
+The API uses a configurable CORS policy that only allows origins specified in the `ALLOWED_ORIGINS` environment variable. This provides enhanced security by preventing unauthorized cross-origin requests.
+
+### Allowed Origins
+- Add your frontend domains to `ALLOWED_ORIGINS`, separated by commas
+- Common development ports are included by default
+- In production, only specify your actual domains
+
+### Example Frontend Origins
+- `http://localhost:3000` - React, Next.js
+- `http://localhost:5173` - Vite
+- `https://yourdomain.com` - Production domain
+
+For detailed CORS configuration, see [CORS Documentation](./docs/CORS_CONFIGURATION.md).
 
 ## Middleware
 

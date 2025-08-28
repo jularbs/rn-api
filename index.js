@@ -6,17 +6,27 @@ require('dotenv').config();
 const connectDB = require('./config/database');
 
 // Import routes and middleware
-const { createRateLimiter } = require('./middleware');
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const { createRateLimiter, corsConfig } = require('./middleware');
 const morgan = require('morgan');
+
+// Set max listeners to prevent memory leak warnings
+process.setMaxListeners(15);
+
+// Log current listeners in development
+if (process.env.NODE_ENV === 'development') {
+    console.log(`📊 Current process listeners - SIGINT: ${process.listenerCount('SIGINT')}, SIGTERM: ${process.listenerCount('SIGTERM')}`);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-// connectDB();
+connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors(corsConfig()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
@@ -32,7 +42,6 @@ app.get('/', (req, res) => {
         endpoints: {
             health: '/api/health',
             auth: '/api/auth',
-            stations: '/api/stations',
             users: '/api/users',
             documentation: '/api/docs'
         }
@@ -64,11 +73,6 @@ app.get('/api/docs', createRateLimiter(1000 * 15 * 6, 3), (req, res) => {
             'PATCH /api/auth/change-password': 'Change user password',
             'POST /api/auth/logout': 'Logout user',
             'GET /api/auth/verify-token': 'Verify JWT token',
-            'GET /api/stations': 'Get all radio stations',
-            'GET /api/stations/:id': 'Get a specific station by ID',
-            'POST /api/stations': 'Create a new station',
-            'PUT /api/stations/:id': 'Update an existing station',
-            'DELETE /api/stations/:id': 'Delete a station',
             'GET /api/users': 'Get all users with pagination (requires auth)',
             'GET /api/users/:id': 'Get a specific user by ID (requires auth)',
             'POST /api/users': 'Create a new user (admin only)',
@@ -99,23 +103,14 @@ app.get('/api/docs', createRateLimiter(1000 * 15 * 6, 3), (req, res) => {
                         password: 'password123'
                     }
                 }
-            },
-            station: {
-                method: 'POST',
-                url: '/api/stations',
-                headers: {
-                    'Authorization': 'Bearer YOUR_JWT_TOKEN'
-                },
-                body: {
-                    name: 'Radyo Natin Sample',
-                    frequency: '101.1 FM',
-                    location: 'Sample City',
-                    description: 'A sample radio station'
-                }
             }
         }
     });
 });
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -136,8 +131,26 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`Radyo Natin API is running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`🚀 Radyo Natin API is running on port ${PORT}`);
+    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📖 API docs: http://localhost:${PORT}/api/docs`);
 });
+
+// Graceful shutdown handling
+const gracefulShutdown = () => {
+    console.log('🔄 Received shutdown signal, shutting down gracefully...');
+    server.close(() => {
+        console.log('🔴 HTTP server closed');
+    });
+};
+
+// Only add these listeners if they haven't been added already
+if (!process.listenerCount('SIGTERM')) {
+    process.on('SIGTERM', gracefulShutdown);
+}
+if (!process.listenerCount('SIGINT')) {
+    process.on('SIGINT', gracefulShutdown);
+}
 
 module.exports = app;

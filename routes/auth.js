@@ -6,7 +6,7 @@ const {
     verifyToken,
     authenticate,
 } = require('../middleware/auth');
-const { validateUser, validateUserUpdate, createRateLimiter } = require('../middleware');
+const { createRateLimiter } = require('../middleware');
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests:
 const registerRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, maxRequests: 3 }); // 3 registrations per hour
 
 // POST /api/auth/register - Register new user
-router.post('/register', registerRateLimit, validateUser, async (req, res) => {
+router.post('/register', registerRateLimit, async (req, res) => {
     try {
         const { firstName, lastName, email, password, phone, role } = req.body;
 
@@ -284,7 +284,7 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 // PUT /api/auth/me - Update current user profile
-router.put('/me', authenticate, validateUserUpdate, async (req, res) => {
+router.put('/me', authenticate, async (req, res) => {
     try {
         const userId = req.user._id;
         const updateData = req.body;

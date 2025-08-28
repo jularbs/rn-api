@@ -1,11 +1,15 @@
 const express = require('express');
-const User = require('../models/User');
-const {
-    generateToken,
-    verifyToken,
-    authenticate,
-} = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const { createRateLimiter } = require('../middleware');
+const {
+    register,
+    login,
+    getProfile,
+    updateProfile,
+    changePassword,
+    logout,
+    verifyTokenEndpoint
+} = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -14,349 +18,24 @@ const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests:
 const registerRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, maxRequests: 3 }); // 3 registrations per hour
 
 // POST /api/auth/register - Register new user
-router.post('/register', registerRateLimit, async (req, res) => {
-    try {
-        const { firstName, lastName, email, password, phone, role } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: 'User with this email already exists'
-            });
-        }
-
-        // Create new user
-        const userData = {
-            firstName,
-            lastName,
-            email,
-            password,
-            phone,
-            role: role || 'user' // Default to user role
-        };
-
-        const user = new User(userData);
-        await user.save();
-
-        // Generate token
-        const token = generateToken(user._id);
-
-        // Return user data without sensitive information
-        const userResponse = {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            fullName: user.fullName,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            emailVerified: user.emailVerified,
-            createdAt: user.createdAt
-        };
-
-        res.status(201).json({
-            success: true,
-            message: 'User registered successfully',
-            data: {
-                user: userResponse,
-                token,
-                expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-            }
-        });
-    } catch (error) {
-        if (error.name === 'ValidationError') {
-            const errors = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({
-                success: false,
-                message: 'Validation failed',
-                errors
-            });
-        }
-
-        if (error.code === 11000) {
-            return res.status(400).json({
-                success: false,
-                message: 'User with this email already exists'
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: 'Error registering user',
-            error: error.message
-        });
-    }
-});
+router.post('/register', registerRateLimit, register);
 
 // POST /api/auth/login - Login user
-router.post('/login', authRateLimit, async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Validation
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and password are required'
-            });
-        }
-
-        // Find user and include password for comparison
-        const user = await User.findOne({ email }).select('+password');
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
-        }
-
-        // Check if user is soft deleted
-        if (user.deletedAt !== null) {
-            return res.status(401).json({
-                success: false,
-                message: 'Account has been deleted. Please contact support.'
-            });
-        }
-
-        // Check password
-        const isValidPassword = await user.comparePassword(password);
-        if (!isValidPassword) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            });
-        }
-
-        // Update last login
-        user.lastLogin = new Date();
-        await user.save({ validateBeforeSave: false });
-
-        // Generate token
-        const token = generateToken(user._id);
-
-        // Return user data without sensitive information
-        const userResponse = {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            fullName: user.fullName,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            emailVerified: user.emailVerified,
-            lastLogin: user.lastLogin,
-            createdAt: user.createdAt
-        };
-
-        res.json({
-            success: true,
-            message: 'Login successful',
-            data: {
-                user: userResponse,
-                token,
-                expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error during login',
-            error: error.message
-        });
-    }
-});
+router.post('/login', authRateLimit, login);
 
 // GET /api/auth/me - Get current user profile
-router.get('/me', authenticate, async (req, res) => {
-    try {
-        const user = req.user;
-
-        const userResponse = {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            fullName: user.fullName,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            emailVerified: user.emailVerified,
-            avatar: user.avatar,
-            dateOfBirth: user.dateOfBirth,
-            age: user.age,
-            address: user.address,
-            preferences: user.preferences,
-            lastLogin: user.lastLogin,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
-        };
-
-        res.json({
-            success: true,
-            data: userResponse
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching user profile',
-            error: error.message
-        });
-    }
-});
+router.get('/me', authenticate, getProfile);
 
 // PUT /api/auth/me - Update current user profile
-router.put('/me', authenticate, async (req, res) => {
-    try {
-        const userId = req.user._id;
-        const updateData = req.body;
+router.put('/me', authenticate, updateProfile);
 
-        // Remove sensitive fields that shouldn't be updated this way
-        delete updateData.password;
-        delete updateData.role; // Users can't change their own role
-        delete updateData.emailVerified;
-        delete updateData.emailVerificationToken;
-        delete updateData.passwordResetToken;
-        delete updateData.passwordResetExpires;
-        delete updateData.deletedAt;
-        delete updateData.deletedBy;
+// PATCH /api/auth/change-password - Change user password
+router.patch('/change-password', authenticate, changePassword);
 
-        // Check if email is being updated and if it already exists
-        if (updateData.email) {
-            const existingUser = await User.findOne({
-                email: updateData.email,
-                _id: { $ne: userId }
-            });
+// POST /api/auth/logout - Logout user
+router.post('/logout', authenticate, logout);
 
-            if (existingUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'User with this email already exists'
-                });
-            }
-
-            // If email is being changed, mark as unverified
-            updateData.emailVerified = false;
-        }
-
-        const user = await User.findByIdAndUpdate(
-            userId,
-            updateData,
-            {
-                new: true,
-                runValidators: true
-            }
-        ).select('-password -emailVerificationToken -passwordResetToken -passwordResetExpires');
-
-        res.json({
-            success: true,
-            message: 'Profile updated successfully',
-            data: user
-        });
-    } catch (error) {
-        if (error.name === 'ValidationError') {
-            const errors = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({
-                success: false,
-                message: 'Validation failed',
-                errors
-            });
-        }
-
-        if (error.code === 11000) {
-            return res.status(400).json({
-                success: false,
-                message: 'User with this email already exists'
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: 'Error updating profile',
-            error: error.message
-        });
-    }
-});
-
-// PATCH /api/auth/change-password - Change password
-router.patch('/change-password', authenticate, async (req, res) => {
-    try {
-        const { currentPassword, newPassword } = req.body;
-
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'Current password and new password are required'
-            });
-        }
-
-        if (newPassword.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'New password must be at least 6 characters long'
-            });
-        }
-
-        // Get user with password
-        const user = await User.findById(req.user._id).select('+password');
-
-        // Check current password
-        const isValidPassword = await user.comparePassword(currentPassword);
-        if (!isValidPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'Current password is incorrect'
-            });
-        }
-
-        // Update password
-        user.password = newPassword;
-        await user.save();
-
-        res.json({
-            success: true,
-            message: 'Password changed successfully'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error changing password',
-            error: error.message
-        });
-    }
-});
-
-// POST /api/auth/logout - Logout user (client-side token invalidation)
-router.post('/logout', authenticate, async (req, res) => {
-    try {
-        // In a stateless JWT system, logout is typically handled client-side
-        // by removing the token from storage. However, we can log this event.
-
-        res.json({
-            success: true,
-            message: 'Logged out successfully'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error during logout',
-            error: error.message
-        });
-    }
-});
-
-// GET /api/auth/verify-token - Verify if token is valid
-router.get('/verify-token', authenticate, async (req, res) => {
-    res.json({
-        success: true,
-        message: 'Token is valid',
-        data: {
-            userId: req.user._id,
-            email: req.user.email,
-            role: req.user.role
-        }
-    });
-});
+// GET /api/auth/verify-token - Verify JWT token
+router.get('/verify-token', authenticate, verifyTokenEndpoint);
 
 module.exports = router;

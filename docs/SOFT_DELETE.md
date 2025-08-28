@@ -15,10 +15,6 @@ Soft delete allows you to "delete" users without permanently removing them from 
 ### New Fields Added
 
 ```javascript
-isDeleted: {
-  type: Boolean,
-  default: false
-},
 deletedAt: {
   type: Date,
   default: null
@@ -44,12 +40,6 @@ Restores a soft deleted user.
 ```javascript
 const user = await User.findWithDeleted().findOne({ _id: userId });
 await user.restore();
-```
-
-#### `isDeletedUser()`
-Checks if a user is soft deleted.
-```javascript
-const isDeleted = user.isDeletedUser();
 ```
 
 ### Static Methods
@@ -104,7 +94,6 @@ Content-Type: application/json
   "data": {
     "id": "user_id",
     "deletedAt": "2025-08-27T12:00:00.000Z",
-    "isDeleted": true
   }
 }
 ```
@@ -123,7 +112,6 @@ POST /api/users/:id/restore
     "id": "user_id",
     "email": "user@example.com",
     "fullName": "John Doe",
-    "isDeleted": false,
     "isActive": true
   }
 }
@@ -267,7 +255,6 @@ userSchema.pre('countDocuments', function () {
 ## Migration Notes
 
 If you have existing users in your database, they will automatically have:
-- `isDeleted: false`
 - `deletedAt: null`
 - `deletedBy: null`
 

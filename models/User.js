@@ -64,6 +64,7 @@ const userSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true, // Adds createdAt and updatedAt
+    id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
@@ -170,7 +171,6 @@ userSchema.statics.forceDelete = function (id) {
 
 // Query middleware to exclude soft deleted users by default
 userSchema.pre(/^find/, function () {
-    // this points to the current query
     this.where({ deletedAt: null });
 });
 

@@ -1,27 +1,28 @@
 {
-  "watch": [
-    "routes/",
-    "models/",
-    "middleware/",
-    "config/",
-    "index.js"
-  ],
-  "ext": "js,json",
-  "ignore": [
-    "node_modules/",
-    "docs/",
-    "*.test.js",
-    "*.spec.js"
-  ],
-  "delay": "1000",
-  "env": {
-    "NODE_ENV": "development"
-  },
-  "events": {
-    "restart": "echo '🔄 Restarting server due to file changes...'",
-    "crash": "echo '💥 Server crashed - waiting for file changes to restart...'",
-    "start": "echo '🚀 Server started successfully'"
-  },
-  "signal": "SIGTERM",
-  "verbose": false
+    "watch": [
+        "routes/",
+        "models/",
+        "controllers/",
+        "middleware/",
+        "config/",
+        "index.js"
+    ],
+    "ext": "js,json",
+    "ignore": [
+        "node_modules/",
+        "docs/",
+        "*.test.js",
+        "*.spec.js"
+    ],
+    "delay": "1000",
+    "env": {
+        "NODE_ENV": "development"
+    },
+    "events": {
+        "restart": "echo '🔄 Restarting server due to file changes...'",
+        "crash": "echo '💥 Server crashed - waiting for file changes to restart...'",
+        "start": "echo '🚀 Server started successfully'"
+    },
+    "signal": "SIGTERM",
+    "verbose": false
 }

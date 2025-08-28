@@ -52,7 +52,6 @@ router.post('/register', registerRateLimit, async (req, res) => {
             email: user.email,
             phone: user.phone,
             role: user.role,
-            isActive: user.isActive,
             emailVerified: user.emailVerified,
             createdAt: user.createdAt
         };
@@ -114,16 +113,8 @@ router.post('/login', authRateLimit, async (req, res) => {
             });
         }
 
-        // Check if user is active
-        if (!user.isActive) {
-            return res.status(401).json({
-                success: false,
-                message: 'Account is deactivated. Please contact support.'
-            });
-        }
-
         // Check if user is soft deleted
-        if (user.isDeleted) {
+        if (user.deletedAt !== null) {
             return res.status(401).json({
                 success: false,
                 message: 'Account has been deleted. Please contact support.'
@@ -155,7 +146,6 @@ router.post('/login', authRateLimit, async (req, res) => {
             email: user.email,
             phone: user.phone,
             role: user.role,
-            isActive: user.isActive,
             emailVerified: user.emailVerified,
             lastLogin: user.lastLogin,
             createdAt: user.createdAt
@@ -192,7 +182,6 @@ router.get('/me', authenticate, async (req, res) => {
             email: user.email,
             phone: user.phone,
             role: user.role,
-            isActive: user.isActive,
             emailVerified: user.emailVerified,
             avatar: user.avatar,
             dateOfBirth: user.dateOfBirth,
@@ -226,12 +215,10 @@ router.put('/me', authenticate, async (req, res) => {
         // Remove sensitive fields that shouldn't be updated this way
         delete updateData.password;
         delete updateData.role; // Users can't change their own role
-        delete updateData.isActive;
         delete updateData.emailVerified;
         delete updateData.emailVerificationToken;
         delete updateData.passwordResetToken;
         delete updateData.passwordResetExpires;
-        delete updateData.isDeleted;
         delete updateData.deletedAt;
         delete updateData.deletedBy;
 

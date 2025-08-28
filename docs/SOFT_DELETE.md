@@ -240,12 +240,14 @@ const allUsers = await User.findWithDeleted();
 ### Query Middleware
 The model includes query middleware that automatically excludes soft deleted users:
 ```javascript
-userSchema.pre(/^find/, function(next) {
-  if (!this.getQuery().isActive && !this.getQuery().isDeleted) {
-    this.find({ isActive: { $ne: false }, isDeleted: { $ne: true } });
-  }
-  next();
+userSchema.pre(/^find/, function() {
+ this.where({ deletedAt: null });
 });
+
+userSchema.pre('countDocuments', function () {
+    this.where({ deletedAt: null });
+});
+
 ```
 
 ## Best Practices

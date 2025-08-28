@@ -77,7 +77,6 @@ app.get('/api/docs', createRateLimiter(1000 * 15 * 6, 3), (req, res) => {
             'POST /api/users': 'Create a new user (admin only)',
             'PUT /api/users/:id': 'Update an existing user (owner or admin)',
             'PATCH /api/users/:id/password': 'Update user password (admin only)',
-            'PATCH /api/users/:id/status': 'Toggle user active status (admin only)',
             'DELETE /api/users/:id': 'Soft delete a user (admin only)',
             'GET /api/users/stats/overview': 'Get user statistics (admin only)'
         },

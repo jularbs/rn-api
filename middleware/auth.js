@@ -47,20 +47,6 @@ const authenticate = async (req, res, next) => {
             });
         }
 
-        if (!user.isActive) {
-            return res.status(401).json({
-                success: false,
-                message: 'User account is deactivated.'
-            });
-        }
-
-        if (user.isDeleted) {
-            return res.status(401).json({
-                success: false,
-                message: 'User account has been deleted.'
-            });
-        }
-
         // Update last login time
         user.lastLogin = new Date();
         await user.save({ validateBeforeSave: false });
@@ -129,7 +115,7 @@ const optionalAuth = async (req, res, next) => {
                 const decoded = verifyToken(token);
                 const user = await User.findById(decoded.userId).select('-password');
 
-                if (user && user.isActive && !user.isDeleted) {
+                if (user) {
                     req.user = user;
                     user.lastLogin = new Date();
                     await user.save({ validateBeforeSave: false });

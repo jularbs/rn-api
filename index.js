@@ -67,7 +67,6 @@ app.get('/api/docs', createRateLimiter(1000 * 15 * 6, 3), (req, res) => {
             'GET /api/health': 'Health check endpoint',
             'POST /api/auth/register': 'Register a new user',
             'POST /api/auth/login': 'Login user',
-            'POST /api/auth/refresh': 'Refresh access token',
             'GET /api/auth/me': 'Get current user profile',
             'PUT /api/auth/me': 'Update current user profile',
             'PATCH /api/auth/change-password': 'Change user password',

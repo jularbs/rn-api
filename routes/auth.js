@@ -2,7 +2,6 @@ const express = require('express');
 const User = require('../models/User');
 const {
     generateToken,
-    generateRefreshToken,
     verifyToken,
     authenticate,
 } = require('../middleware/auth');
@@ -41,9 +40,8 @@ router.post('/register', registerRateLimit, async (req, res) => {
         const user = new User(userData);
         await user.save();
 
-        // Generate tokens
+        // Generate token
         const token = generateToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
 
         // Return user data without sensitive information
         const userResponse = {
@@ -65,7 +63,6 @@ router.post('/register', registerRateLimit, async (req, res) => {
             data: {
                 user: userResponse,
                 token,
-                refreshToken,
                 expiresIn: process.env.JWT_EXPIRES_IN || '7d'
             }
         });
@@ -146,9 +143,8 @@ router.post('/login', authRateLimit, async (req, res) => {
         user.lastLogin = new Date();
         await user.save({ validateBeforeSave: false });
 
-        // Generate tokens
+        // Generate token
         const token = generateToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
 
         // Return user data without sensitive information
         const userResponse = {
@@ -171,7 +167,6 @@ router.post('/login', authRateLimit, async (req, res) => {
             data: {
                 user: userResponse,
                 token,
-                refreshToken,
                 expiresIn: process.env.JWT_EXPIRES_IN || '7d'
             }
         });
@@ -179,67 +174,6 @@ router.post('/login', authRateLimit, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error during login',
-            error: error.message
-        });
-    }
-});
-
-// POST /api/auth/refresh - Refresh access token
-router.post('/refresh', async (req, res) => {
-    try {
-        const { refreshToken } = req.body;
-
-        if (!refreshToken) {
-            return res.status(400).json({
-                success: false,
-                message: 'Refresh token is required'
-            });
-        }
-
-        // Verify refresh token
-        const decoded = verifyToken(refreshToken);
-
-        if (decoded.type !== 'refresh') {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid refresh token'
-            });
-        }
-
-        // Check if user still exists and is active
-        const user = await User.findById(decoded.userId);
-
-        if (!user || !user.isActive || user.isDeleted) {
-            return res.status(401).json({
-                success: false,
-                message: 'Refresh token is no longer valid'
-            });
-        }
-
-        // Generate new tokens
-        const newToken = generateToken(user._id);
-        const newRefreshToken = generateRefreshToken(user._id);
-
-        res.json({
-            success: true,
-            message: 'Token refreshed successfully',
-            data: {
-                token: newToken,
-                refreshToken: newRefreshToken,
-                expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-            }
-        });
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid or expired refresh token'
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: 'Error refreshing token',
             error: error.message
         });
     }

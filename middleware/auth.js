@@ -8,13 +8,6 @@ const generateToken = (userId) => {
     });
 };
 
-// Generate refresh token
-const generateRefreshToken = (userId) => {
-    return jwt.sign({ userId, type: 'refresh' }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
-    });
-};
-
 // Verify JWT token
 const verifyToken = (token) => {
     return jwt.verify(token, process.env.JWT_SECRET);
@@ -178,7 +171,6 @@ const ownerOrAdmin = (req, res, next) => {
 
 module.exports = {
     generateToken,
-    generateRefreshToken,
     verifyToken,
     authenticate,
     authorize,

@@ -1,11 +1,10 @@
-# Radyo Natin API
+# Express API
 
 A RESTful API server for managing radio stations built with Express.js.
 
 ## Features
 
 - 🚀 RESTful API endpoints
-- 📻 Radio station management (CRUD operations)
 - 🛡️ Request validation and error handling
 - 📝 Request logging middleware
 - ⚡ Rate limiting
@@ -17,7 +16,7 @@ A RESTful API server for managing radio stations built with Express.js.
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v22 or higher)
 - npm or yarn
 
 ### Installation

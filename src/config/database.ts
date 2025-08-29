@@ -11,11 +11,7 @@ const connectDB = async (): Promise<void> => {
   }
 
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI as string, {
-      // Mongoose 6+ no longer needs these options as they are default
-      // useNewUrlParser: true,
-      // useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(process.env.MONGODB_URI as string, {});
 
     console.log(`🍃 MongoDB Connected: ${conn.connection.host}`);
     isConnected = true;

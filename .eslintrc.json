@@ -3,25 +3,26 @@
     "es2021": true,
     "node": true
   },
-  "extends": [
-    "eslint:recommended"
-  ],
+  "extends": ["eslint:recommended"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
-    "sourceType": "module",
-    "project": "./tsconfig.json"
+    "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
+  "plugins": ["@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/explicit-function-return-type": "off",
+    // TypeScript specific rules
     "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
+
+    // General JavaScript/TypeScript rules
+    "no-duplicate-imports": "error",
+    "no-unused-expressions": "error",
     "prefer-const": "error",
     "no-var": "error",
-    "no-undef": "off"
+
+    // Express/Node.js specific rules
+    "handle-callback-err": "error"
   },
-  "ignorePatterns": ["dist/", "node_modules/"]
+  "ignorePatterns": ["dist/", "node_modules/", "*.js"]
 }

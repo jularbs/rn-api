@@ -7,7 +7,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     const userData = req.body;
 
     // Check if user already exists
-    const existingUser = await UserModel.findOneActive({ email: userData.email });
+    const existingUser = await UserModel.findOne({ email: userData.email });
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -21,7 +21,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     await user.save();
 
     // Return user without sensitive information
-    const userResponse = await UserModel.findByIdActive(user._id)
+    const userResponse = await UserModel.findById(user._id)
       .select('-password -emailVerificationToken -passwordResetToken -passwordResetExpires');
 
     res.status(201).json({
@@ -63,7 +63,7 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
   try {
     const { id } = req.params;
 
-    const user = await UserModel.findByIdActive(id)
+    const user = await UserModel.findById(id)
       .select('-password -emailVerificationToken -passwordResetToken -passwordResetExpires');
 
     if (!user) {
@@ -133,13 +133,13 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
 
     // Execute query with pagination
     const [users, total] = await Promise.all([
-      UserModel.findActive()
+      UserModel.find()
         .where(query)
         .select('-password -emailVerificationToken -passwordResetToken -passwordResetExpires')
         .sort(sortConfig)
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber),
-      UserModel.countActive(query)
+      UserModel.countDocuments(query)
     ]);
 
     const totalPages = Math.ceil(total / limitNumber);
@@ -231,7 +231,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     const { id } = req.params;
     const currentUser = req.user;
 
-    const user = await UserModel.findByIdActive(id);
+    const user = await UserModel.findById(id);
 
     if (!user) {
       res.status(404).json({

@@ -53,16 +53,37 @@ export interface IUser {
   }
 })
 
+/* eslint-disable-next-line */
+@pre<User>(/^find/, function (this: any) {
+  // Automatically filter out soft-deleted users for all find operations
+  this.where({ deletedAt: null });
+})
+
+/* eslint-disable-next-line */
+@pre<User>("findOneAndUpdate", function (this: any) {
+  // Automatically filter out soft-deleted users for findOneAndUpdate operations
+  this.where({ deletedAt: null });
+})
+
+/* eslint-disable-next-line */
+@pre<User>("countDocuments", function (this: any) {
+  // Automatically filter out soft-deleted users for count operations
+  this.where({ deletedAt: null });
+})
+
 @index({ role: 1 })
 @index({ createdAt: -1 })
 @index({ deletedAt: -1 })
+
 @modelOptions({
   schemaOptions: {
     timestamps: true,
+    id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   },
 })
+
 export class User {
   @prop({
     required: true,
@@ -171,26 +192,6 @@ export class User {
   // Instance method to check if user is soft deleted
   public isDeletedUser(this: DocumentType<User>): boolean {
     return this.deletedAt !== null && this.deletedAt !== undefined;
-  }
-
-  // Static method to find non-deleted users
-  public static findActive() {
-    return UserModel.find({ deletedAt: null });
-  }
-
-  // Static method to find one non-deleted user
-  public static findOneActive(filter: Record<string, unknown>) {
-    return UserModel.findOne({ ...filter, deletedAt: null });
-  }
-
-  // Static method to find by ID (non-deleted)
-  public static findByIdActive(id: string | Types.ObjectId) {
-    return UserModel.findOne({ _id: id, deletedAt: null });
-  }
-
-  // Static method to count non-deleted users
-  public static countActive(filter: Record<string, unknown> = {}) {
-    return UserModel.countDocuments({ ...filter, deletedAt: null });
   }
 
   // Static method to find deleted users

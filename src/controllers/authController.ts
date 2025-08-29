@@ -6,10 +6,10 @@ import { RegisterRequest, LoginRequest } from '../types';
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phone, role }: RegisterRequest = req.body;
+    const { firstName, lastName, email, password, phone, role } : RegisterRequest = req.body;
 
     // Check if user already exists
-    const existingUser = await UserModel.findOneActive({ email });
+    const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -99,7 +99,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Find user and include password for comparison
-    const user = await UserModel.findOneActive({ email }).select('+password');
+    const user = await UserModel.findOne({ email }).select('+password');
 
     if (!user) {
       res.status(401).json({

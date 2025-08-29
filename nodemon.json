@@ -1,23 +1,19 @@
 {
     "watch": [
-        "routes/",
-        "models/",
-        "controllers/",
-        "middleware/",
-        "config/",
-        "index.js"
+        "src/"
     ],
-    "ext": "js,json",
+    "ext": "ts,js,json",
     "ignore": [
         "node_modules/",
-        "docs/",
-        "*.test.js",
-        "*.spec.js"
+        "dist/",
+        "*.test.ts",
+        "*.spec.ts"
     ],
     "delay": "1000",
     "env": {
         "NODE_ENV": "development"
     },
+    "exec": "ts-node --files src/index.ts",
     "events": {
         "restart": "echo '🔄 Restarting server due to file changes...'",
         "crash": "echo '💥 Server crashed - waiting for file changes to restart...'",

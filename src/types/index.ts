@@ -9,7 +9,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone?: string;
-  role?: 'user' | 'admin' | 'moderator';
+  role?: "user" | "admin" | "moderator";
 }
 
 export interface LoginRequest {
@@ -17,7 +17,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export type UserRole = 'user' | 'admin' | 'moderator';
+export type UserRole = "user" | "admin" | "moderator" | "owner";
 
 export interface HealthCheckResponse {
   status: string;
@@ -37,10 +37,4 @@ export interface AppInfo {
   message: string;
   version: string;
   status: string;
-  endpoints: {
-    health: string;
-    auth: string;
-    users: string;
-    documentation: string;
-  };
 }

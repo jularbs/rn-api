@@ -22,6 +22,7 @@ export interface IUser {
   deletedAt?: Date;
   deletedBy?: Ref<User>;
   lastLogin?: Date;
+  accountVerified: boolean;
   emailVerified: boolean;
   emailVerificationToken?: string;
   passwordResetToken?: string;
@@ -52,29 +53,19 @@ export interface IUser {
     this.emailVerificationToken = randomBytes(32).toString("hex");
   }
 })
-
 /* eslint-disable-next-line */
 @pre<User>(/^find/, function (this: any) {
   // Automatically filter out soft-deleted users for all find operations
   this.where({ deletedAt: null });
 })
-
-/* eslint-disable-next-line */
-@pre<User>("findOneAndUpdate", function (this: any) {
-  // Automatically filter out soft-deleted users for findOneAndUpdate operations
-  this.where({ deletedAt: null });
-})
-
 /* eslint-disable-next-line */
 @pre<User>("countDocuments", function (this: any) {
   // Automatically filter out soft-deleted users for count operations
   this.where({ deletedAt: null });
 })
-
 @index({ role: 1 })
 @index({ createdAt: -1 })
 @index({ deletedAt: -1 })
-
 @modelOptions({
   schemaOptions: {
     timestamps: true,
@@ -83,7 +74,6 @@ export interface IUser {
     toObject: { virtuals: true },
   },
 })
-
 export class User {
   @prop({
     required: true,
@@ -128,6 +118,9 @@ export class User {
 
   @prop({ default: null })
   public lastLogin?: Date;
+
+  @prop({ default: false })
+  public accountVerified!: boolean;
 
   @prop({ default: false })
   public emailVerified!: boolean;

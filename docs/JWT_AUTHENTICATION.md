@@ -5,6 +5,7 @@ This document describes the JWT (JSON Web Token) authentication system implement
 ## Overview
 
 The API uses JWT tokens for stateless authentication with the following features:
+
 - User registration and login
 - Token-based authentication
 - Role-based authorization (user, admin, moderator)
@@ -16,6 +17,7 @@ The API uses JWT tokens for stateless authentication with the following features
 ## Authentication Flow
 
 ### 1. User Registration
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -31,6 +33,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -55,6 +58,7 @@ Content-Type: application/json
 ```
 
 ### 2. User Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -66,6 +70,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -88,6 +93,7 @@ Content-Type: application/json
 ```
 
 ### 3. Using Protected Endpoints
+
 Include the JWT token in the Authorization header:
 
 ```http
@@ -108,85 +114,98 @@ JWT_REFRESH_EXPIRES_IN=30d
 ## Authentication Endpoints
 
 ### Register User
+
 - **POST** `/api/auth/register`
 - **Rate Limited:** 3 registrations per hour
 - **Body:** `firstName`, `lastName`, `email`, `password`, `phone` (optional), `role` (optional)
 
 ### Login User
+
 - **POST** `/api/auth/login`
 - **Rate Limited:** 5 attempts per 15 minutes
 - **Body:** `email`, `password`
 
 ### Refresh Token
+
 - **POST** `/api/auth/refresh`
 - **Body:** `refreshToken`
 
 ### Get Current User
+
 - **GET** `/api/auth/me`
 - **Auth Required:** Yes
 
 ### Update Profile
+
 - **PUT** `/api/auth/me`
 - **Auth Required:** Yes
 - **Body:** Any user fields except sensitive ones
 
 ### Change Password
+
 - **PATCH** `/api/auth/change-password`
 - **Auth Required:** Yes
 - **Body:** `currentPassword`, `newPassword`
 
 ### Logout
+
 - **POST** `/api/auth/logout`
 - **Auth Required:** Yes
 
 ### Verify Token
+
 - **GET** `/api/auth/verify-token`
 - **Auth Required:** Yes
 
 ## Middleware Functions
 
 ### `authenticate`
+
 Verifies JWT token and adds user to request object.
 
 ```javascript
-const { authenticate } = require('./middleware/auth');
+const { authenticate } = require("./middleware/auth");
 
-router.get('/protected', authenticate, (req, res) => {
+router.get("/protected", authenticate, (req, res) => {
   // req.user contains the authenticated user
   res.json({ user: req.user });
 });
 ```
 
 ### `authorize(...roles)`
+
 Checks if authenticated user has required role.
 
 ```javascript
-const { authenticate, authorize } = require('./middleware/auth');
+const { authenticate, authorize } = require("./middleware/auth");
 
 // Only admins can access
-router.get('/admin-only', authenticate, authorize('admin'), handler);
+router.get("/admin-only", authenticate, authorize("admin"), handler);
 
 // Admins or moderators can access
-router.get('/staff-only', authenticate, authorize('admin', 'moderator'), handler);
+router.get(
+  "/staff-only",
+  authenticate,
+  authorize("admin", "moderator"),
+  handler
+);
 ```
 
-### `ownerOrAdmin`
-Allows access if user owns the resource or is an admin.
-
 ```javascript
-const { authenticate, ownerOrAdmin } = require('./middleware/auth');
+const { authenticate } = require("./middleware/auth");
 
 // User can access their own profile or admin can access any
-router.get('/users/:id', authenticate, ownerOrAdmin, handler);
+router.get("/users/:id", authenticate, authorize("admin", "owner"), handler);
 ```
 
 ### `optionalAuth`
+
 Authenticates user if token is provided, but doesn't require it.
 
 ```javascript
-const { optionalAuth } = require('./middleware/auth');
+const { optionalAuth } = require("./middleware/auth");
 
-router.get('/public-with-user-context', optionalAuth, (req, res) => {
+router.get("/public-with-user-context", optionalAuth, (req, res) => {
   // req.user will be null if not authenticated
   if (req.user) {
     // User is authenticated
@@ -197,15 +216,18 @@ router.get('/public-with-user-context', optionalAuth, (req, res) => {
 ## User Roles
 
 ### user (default)
+
 - Can access their own profile
 - Can update their own information
 - Can change their own password
 
 ### moderator
+
 - All user permissions
 - Can moderate content (future feature)
 
 ### admin
+
 - All permissions
 - Can manage all users
 - Can access user statistics
@@ -223,16 +245,19 @@ Authentication endpoints have enhanced rate limiting:
 ## Token Management
 
 ### Access Tokens
+
 - **Expiry:** 7 days (configurable)
 - **Contains:** User ID
 - **Used for:** API authentication
 
 ### Refresh Tokens
+
 - **Expiry:** 30 days (configurable)
 - **Contains:** User ID + type flag
 - **Used for:** Getting new access tokens
 
 ### Token Refresh Flow
+
 ```http
 POST /api/auth/refresh
 Content-Type: application/json
@@ -243,6 +268,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -258,6 +284,7 @@ Content-Type: application/json
 ## Error Responses
 
 ### Authentication Errors
+
 ```json
 {
   "success": false,
@@ -266,6 +293,7 @@ Content-Type: application/json
 ```
 
 ### Authorization Errors
+
 ```json
 {
   "success": false,
@@ -274,6 +302,7 @@ Content-Type: application/json
 ```
 
 ### Token Expiry
+
 ```json
 {
   "success": false,
@@ -282,6 +311,7 @@ Content-Type: application/json
 ```
 
 ### Invalid Token
+
 ```json
 {
   "success": false,
@@ -292,22 +322,26 @@ Content-Type: application/json
 ## Security Features
 
 ### Password Hashing
+
 - Uses bcryptjs with salt rounds of 12
 - Passwords never stored in plain text
 - Passwords excluded from queries by default
 
 ### Rate Limiting
+
 - Prevents brute force attacks
 - Configurable limits per endpoint
 - Returns 429 status with retry information
 
 ### Token Security
+
 - Stateless JWT tokens
 - Configurable expiration
 - Refresh token rotation
 - Secret key from environment variables
 
 ### Account Security
+
 - Inactive accounts blocked
 - Soft deleted accounts blocked
 - Last login tracking
@@ -316,41 +350,44 @@ Content-Type: application/json
 ## Client-Side Implementation
 
 ### Storing Tokens
+
 ```javascript
 // Store tokens after login
-localStorage.setItem('accessToken', data.token);
-localStorage.setItem('refreshToken', data.refreshToken);
+localStorage.setItem("accessToken", data.token);
+localStorage.setItem("refreshToken", data.refreshToken);
 ```
 
 ### Making Authenticated Requests
-```javascript
-const token = localStorage.getItem('accessToken');
 
-fetch('/api/users', {
+```javascript
+const token = localStorage.getItem("accessToken");
+
+fetch("/api/users", {
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
 });
 ```
 
 ### Handling Token Expiry
+
 ```javascript
 // Intercept 401 responses and refresh token
 if (response.status === 401) {
-  const refreshToken = localStorage.getItem('refreshToken');
-  
-  const refreshResponse = await fetch('/api/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  const refreshResponse = await fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
   });
-  
+
   if (refreshResponse.ok) {
     const data = await refreshResponse.json();
-    localStorage.setItem('accessToken', data.data.token);
-    localStorage.setItem('refreshToken', data.data.refreshToken);
-    
+    localStorage.setItem("accessToken", data.data.token);
+    localStorage.setItem("refreshToken", data.data.refreshToken);
+
     // Retry original request
   } else {
     // Redirect to login
@@ -359,16 +396,17 @@ if (response.status === 401) {
 ```
 
 ### Logout
+
 ```javascript
 // Remove tokens and call logout endpoint
-localStorage.removeItem('accessToken');
-localStorage.removeItem('refreshToken');
+localStorage.removeItem("accessToken");
+localStorage.removeItem("refreshToken");
 
-fetch('/api/auth/logout', {
-  method: 'POST',
+fetch("/api/auth/logout", {
+  method: "POST",
   headers: {
-    'Authorization': `Bearer ${token}`
-  }
+    Authorization: `Bearer ${token}`,
+  },
 });
 ```
 
@@ -377,6 +415,7 @@ fetch('/api/auth/logout', {
 ### Testing with cURL
 
 #### Register
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -389,6 +428,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 ```
 
 #### Login
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -399,6 +439,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```
 
 #### Access Protected Endpoint
+
 ```bash
 curl -X GET http://localhost:3000/api/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"

@@ -1,19 +1,26 @@
-import { Request, Response } from 'express';
-import { UserModel } from '../models/User';
-import { generateToken } from '../middleware/auth';
-import { RegisterRequest, LoginRequest } from '../types';
+import { Request, Response } from "express";
+import { UserModel } from "../models/User";
+import { generateToken } from "../middleware/auth";
+import { RegisterRequest, LoginRequest } from "../types";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phone, role } : RegisterRequest = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      role,
+    }: RegisterRequest = req.body;
 
     // Check if user already exists
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: "User with this email already exists",
       });
       return;
     }
@@ -25,46 +32,32 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email,
       password,
       phone,
-      role: role || 'user' // Default to user role
+      role: role || "user", // Default to user role
     };
 
     const user = new UserModel(userData);
     await user.save();
 
-    // Generate token
-    const token = generateToken(user._id);
-
-    // Return user data without sensitive information
-    const userResponse = {
-      id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.fullName,
-      email: user.email,
-      phone: phone,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      createdAt: user.createdAt
-    };
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: 'User registered successfully',
-      data: {
-        user: userResponse,
-        token,
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-      }
+      message:
+        "User registered successfully. Please wait for account activation.",
     });
   } catch (error: unknown) {
-    const err = error as Error & { name?: string; code?: number; errors?: Record<string, { message: string }> };
-    
-    if (err.name === 'ValidationError') {
-      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
+    const err = error as Error & {
+      name?: string;
+      code?: number;
+      errors?: Record<string, { message: string }>;
+    };
+
+    if (err.name === "ValidationError") {
+      const errors = Object.values(err.errors || {}).map(
+        (validationErr) => validationErr.message
+      );
       res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors
+        message: "Validation failed",
+        errors,
       });
       return;
     }
@@ -72,15 +65,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (err.code === 11000) {
       res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: "User with this email already exists",
       });
       return;
     }
 
     res.status(500).json({
       success: false,
-      message: 'Error registering user',
-      error: err.message
+      message: "Error registering user",
+      error: err.message,
     });
   }
 };
@@ -93,18 +86,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!email || !password) {
       res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: "Email and password are required",
       });
       return;
     }
 
     // Find user and include password for comparison
-    const user = await UserModel.findOne({ email }).select('+password');
+    const user = await UserModel.findOne({ email }).select("+password");
 
     if (!user) {
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: "Invalid email or password",
       });
       return;
     }
@@ -113,7 +106,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (user.deletedAt) {
       res.status(401).json({
         success: false,
-        message: 'Account has been deleted. Please contact support.'
+        message: "Account has been deleted. Please contact support.",
+      });
+      return;
+    }
+
+    //Check if user is verified
+    if (!user.accountVerified) {
+      res.status(401).json({
+        success: false,
+        message:
+          "Account is not yet activated. Please wait for admin approval.",
       });
       return;
     }
@@ -123,7 +126,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!isValidPassword) {
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: "Invalid email or password",
       });
       return;
     }
@@ -145,37 +148,40 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       role: user.role,
       emailVerified: user.emailVerified,
       lastLogin: user.lastLogin,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
     };
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       data: {
         user: userResponse,
         token,
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-      }
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+      },
     });
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({
       success: false,
-      message: 'Error during login',
-      error: err.message
+      message: "Error during login",
+      error: err.message,
     });
   }
 };
 
 // GET /api/auth/me - Get current user profile
-export const getProfile = async (req: Request, res: Response): Promise<void> => {
+export const getProfile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const user = req.user;
 
     if (!user) {
       res.status(401).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
       return;
     }
@@ -190,30 +196,33 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
       emailVerified: user.emailVerified,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
     };
 
     res.json({
       success: true,
-      data: userResponse
+      data: userResponse,
     });
   } catch (error: unknown) {
     const err = error as Error;
     res.status(500).json({
       success: false,
-      message: 'Error fetching user profile',
-      error: err.message
+      message: "Error fetching user profile",
+      error: err.message,
     });
   }
 };
 
 // PUT /api/auth/me - Update current user profile
-export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+export const updateProfile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const user = req.user;
-    const allowedUpdates = ['firstName', 'lastName', 'phone'];
+    const allowedUpdates = ["firstName", "lastName", "phone"];
     const updates = Object.keys(req.body)
-      .filter(key => allowedUpdates.includes(key))
+      .filter((key) => allowedUpdates.includes(key))
       .reduce((obj: Record<string, unknown>, key) => {
         obj[key] = req.body[key];
         return obj;
@@ -222,21 +231,20 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     if (Object.keys(updates).length === 0) {
       res.status(400).json({
         success: false,
-        message: 'No valid updates provided'
+        message: "No valid updates provided",
       });
       return;
     }
 
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      user!._id,
-      updates,
-      { new: true, runValidators: true }
-    );
+    const updatedUser = await UserModel.findByIdAndUpdate(user!._id, updates, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedUser) {
       res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
       return;
     }
@@ -251,31 +259,36 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       emailVerified: updatedUser.emailVerified,
       lastLogin: updatedUser.lastLogin,
       createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt
+      updatedAt: updatedUser.updatedAt,
     };
 
     res.json({
       success: true,
-      message: 'Profile updated successfully',
-      data: userResponse
+      message: "Profile updated successfully",
+      data: userResponse,
     });
   } catch (error: unknown) {
-    const err = error as Error & { name?: string; errors?: Record<string, { message: string }> };
-    
-    if (err.name === 'ValidationError') {
-      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
+    const err = error as Error & {
+      name?: string;
+      errors?: Record<string, { message: string }>;
+    };
+
+    if (err.name === "ValidationError") {
+      const errors = Object.values(err.errors || {}).map(
+        (validationErr) => validationErr.message
+      );
       res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors
+        message: "Validation failed",
+        errors,
       });
       return;
     }
 
     res.status(500).json({
       success: false,
-      message: 'Error updating profile',
-      error: err.message
+      message: "Error updating profile",
+      error: err.message,
     });
   }
 };
@@ -284,9 +297,9 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   // For stateless JWT, logout is handled client-side by removing the token
   // If you implement token blacklisting, you would add the token to a blacklist here
-  
+
   res.json({
     success: true,
-    message: 'Logged out successfully'
+    message: "Logged out successfully",
   });
 };

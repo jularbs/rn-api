@@ -13,7 +13,7 @@ export const generateToken = (userId: Types.ObjectId): string => {
     throw new Error("JWT_SECRET is not defined in environment variables");
   }
 
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
 
   return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };
@@ -81,11 +81,12 @@ export const authenticate = async (
     next();
   } catch (error: unknown) {
     const err = error as Error & { name?: string };
-    
+
     if (err.name === "JsonWebTokenError") {
       res.status(401).json({
         success: false,
-        message: "Invalid token.",
+        message:
+          "Invalid access token. Please log in to obtain a new access token.",
       });
       return;
     }
@@ -93,14 +94,14 @@ export const authenticate = async (
     if (err.name === "TokenExpiredError") {
       res.status(401).json({
         success: false,
-        message: "Token has expired.",
+        message: "Access token has expired. Please log in again.",
       });
       return;
     }
 
     res.status(500).json({
       success: false,
-      message: "Authentication error.",
+      message: "Authentication error. Please log in to access resource.",
       error: err.message,
     });
   }
@@ -112,15 +113,22 @@ export const authorize = (...roles: UserRole[]) => {
     if (!req.user) {
       res.status(401).json({
         success: false,
-        message: "Authentication required.",
+        message: "Authentication required. Please log in.",
       });
       return;
     }
 
+    //check if owner is included in roles
+    const resourceUserId = req.params.id || req.params.userId;
+    if (roles.includes("owner") && req.user._id.toString() === resourceUserId) {
+      return next();
+    }
+
+    // check if user's role is in the allowed roles
     if (!roles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
-        message: `Access denied. Required role: ${roles.join(" or ")}`,
+        message: `Access denied. You don't have permission to access this resource.`,
       });
       return;
     }
@@ -171,30 +179,4 @@ export const optionalAuth = async (
     req.user = undefined;
     next();
   }
-};
-
-// Check if user owns the resource or is admin
-export const ownerOrAdmin = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (!req.user) {
-    res.status(401).json({
-      success: false,
-      message: "Authentication required.",
-    });
-    return;
-  }
-
-  const resourceUserId = req.params.id || req.params.userId;
-
-  if (req.user.role === "admin" || req.user._id.toString() === resourceUserId) {
-    return next();
-  }
-
-  res.status(403).json({
-    success: false,
-    message: "Access denied. You can only access your own resources.",
-  });
 };

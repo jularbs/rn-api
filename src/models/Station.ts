@@ -1,4 +1,9 @@
-import { prop, getModelForClass } from "@typegoose/typegoose";
+import {
+  prop,
+  getModelForClass,
+  modelOptions,
+  index,
+} from "@typegoose/typegoose";
 import { Types } from "mongoose";
 
 export interface IStation {
@@ -15,6 +20,19 @@ export interface IStation {
   updatedAt: Date;
 }
 
+@index({ slug: 1 }, { unique: true })
+@index({ locationGroup: 1 })
+@index({ status: 1 })
+@index({ createdAt: -1 })
+@index({ deletedAt: -1 })
+@modelOptions({
+  schemaOptions: {
+    timestamps: true,
+    id: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+})
 export class Station {
   @prop({
     required: true,

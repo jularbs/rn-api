@@ -7,9 +7,12 @@ import dotenv from "dotenv";
 // Import database connection
 import connectDB from "./config/database";
 
-// Import routes and middleware
+// Import routes
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
+import stationRoutes from "./routes/stations";
+
+//import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
 import { AppInfo, HealthCheckResponse } from "./types";
 
@@ -65,6 +68,7 @@ app.get("/api/health", (req: Request, res: Response) => {
 // API Routes
 app.use("/api", authRoutes);
 app.use("/api", usersRoutes);
+app.use("/api", stationRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response) => {

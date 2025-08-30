@@ -22,7 +22,7 @@ router.get("/v1/user", authenticate, authorize("admin"), getAllUsers);
 router.get("/v1/user/:id", authenticate, authorize("admin"), getUserById);
 
 // PUT /api/users/:id - Update user (Owner or Admin)
-router.patch("/v1/user/:id", authenticate, authorize("admin", "owner"), updateUser);
+router.put("/v1/user/:id", authenticate, authorize("admin", "owner"), updateUser);
 
 // DELETE /api/users/:id - Delete user (soft delete) (Admin only)
 router.delete("/v1/user/:id", authenticate, authorize("admin"), deleteUser);

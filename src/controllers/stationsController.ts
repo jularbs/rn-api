@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { StationModel } from "../models/Station";
 import { Types } from "mongoose";
 import { CreateStationRequest, UpdateStationRequest } from "@/types";
-import slugify from "slugify";
 
 // GET /api/stations - Get all stations
 export const getAllStations = async (
@@ -163,6 +162,7 @@ export const createStation = async (
   try {
     const {
       name,
+      slug,
       frequency,
       address,
       locationGroup,
@@ -179,10 +179,6 @@ export const createStation = async (
       });
       return;
     }
-
-    // Use slug from request or generate slug from name if not provided
-    const slug =
-      req.body.slug || slugify(name, { lower: true, trim: true, strict: true });
 
     // Check if station with slug already exists
     const existingStation = await StationModel.findOne({

@@ -3,8 +3,11 @@ import {
   getModelForClass,
   modelOptions,
   index,
+  DocumentType,
+  pre,
 } from "@typegoose/typegoose";
 import { Types } from "mongoose";
+import slugify from "slugify";
 import validator from "validator";
 
 export interface IStation {
@@ -20,6 +23,17 @@ export interface IStation {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Pre-hook to generate slug from name if not provided
+@pre<Station>("save", function (this: DocumentType<Station>) {
+  if (!this.slug && this.name) {
+    this.slug = slugify(this.name, {
+      lower: true,
+      strict: true,
+      remove: /[*+~.()'"!:@]/g
+    });
+  }
+})
 
 @index({ locationGroup: 1 })
 @index({ status: 1 })

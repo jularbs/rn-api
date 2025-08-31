@@ -17,6 +17,10 @@ export interface IStation {
   frequency: string;
   address?: string;
   locationGroup: "luzon" | "visayas" | "mindanao";
+  logoImage?: Types.ObjectId;
+  contactNumber?: string;
+  email?: string;
+  mapEmbedCode?: string;
   audioStreamURL?: string;
   videoStreamURL?: string;
   status: "active" | "inactive";
@@ -83,6 +87,30 @@ export class Station {
     },
   })
   public locationGroup!: "luzon" | "visayas" | "mindanao";
+
+  @prop({ ref: 'Media' })
+  public logoImage?: Types.ObjectId;
+
+  @prop({
+    trim: true,
+    maxlength: [100, "Contact number cannot exceed 100 characters"],
+  })
+  public contactNumber?: string;
+
+  @prop({
+    trim: true,
+    lowercase: true,
+    validate: [
+      validator.isEmail,
+      "Please provide a valid email address",
+    ],
+  })
+  public email?: string;
+
+  @prop({
+    trim: true,
+  })
+  public mapEmbedCode?: string;
 
   @prop({
     trim: true,

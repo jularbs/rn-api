@@ -5,6 +5,7 @@ import {
   index,
 } from "@typegoose/typegoose";
 import { Types } from "mongoose";
+import validator from "validator";
 
 export interface IStation {
   _id: Types.ObjectId;
@@ -20,7 +21,6 @@ export interface IStation {
   updatedAt: Date;
 }
 
-@index({ slug: 1 }, { unique: true })
 @index({ locationGroup: 1 })
 @index({ status: 1 })
 @index({ createdAt: -1 })
@@ -63,23 +63,37 @@ export class Station {
 
   @prop({
     required: true,
-    enum: ["luzon", "visayas", "mindanao"],
+    enum: {
+      values: ["luzon", "visayas", "mindanao"],
+      message: "'{VALUE}' is not a valid location group.",
+    },
   })
   public locationGroup!: "luzon" | "visayas" | "mindanao";
 
   @prop({
     trim: true,
+    validate: [
+      validator.isURL,
+      "Please provide a valid URL for the audio stream",
+    ],
   })
   public audioStreamURL?: string;
 
   @prop({
     trim: true,
+    validate: [
+      validator.isURL,
+      "Please provide a valid URL for the video stream",
+    ],
   })
   public videoStreamURL?: string;
 
   @prop({
     required: true,
-    enum: ["active", "inactive"],
+    enum: {
+      values: ["active", "inactive"],
+      message: "'{VALUE}' is not a valid status.",
+    },
     default: "active",
   })
   public status!: "active" | "inactive";

@@ -1,3 +1,4 @@
+//TODOS: test error with url http://localhost:8000/api/v1/station/radio-station-two/slug
 import { Router } from "express";
 import {
   getAllStations,
@@ -14,8 +15,8 @@ const router = Router();
 
 // Public routes - no authentication required
 router.get("/v1/station", getAllStations);
-router.get("/v1/station/slug/:slug", getStationBySlug);
-router.get("/v1/station/:id", getStationById);
+router.get("/v1/station/id/:id", getStationById);
+router.get("/v1/station/:slug", getStationBySlug);
 
 // Admin/Moderator only routes
 router.post(

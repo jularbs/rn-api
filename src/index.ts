@@ -1,8 +1,12 @@
 import "reflect-metadata";
+import dotenv from "dotenv";
+
+// Load environment variables FIRST
+dotenv.config();
+
 import express, { Request, Response } from "express";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 
 // Import database connection
 import connectDB from "./config/database";
@@ -11,25 +15,15 @@ import connectDB from "./config/database";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
 import stationRoutes from "./routes/stations";
+import categoriesRoutes from "./routes/categories";
+import tagsRoutes from "./routes/tags";
 
 //import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
 import { AppInfo, HealthCheckResponse } from "./types";
 
-// Load environment variables
-dotenv.config();
-
 // Set max listeners to prevent memory leak warnings
 process.setMaxListeners(15);
-
-// Log current listeners in development
-if (process.env.NODE_ENV === "development") {
-  console.log(
-    `📊 Current process listeners - SIGINT: ${process.listenerCount(
-      "SIGINT"
-    )}, SIGTERM: ${process.listenerCount("SIGTERM")}`
-  );
-}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -69,6 +63,16 @@ app.get("/api/health", (req: Request, res: Response) => {
 app.use("/api", authRoutes);
 app.use("/api", usersRoutes);
 app.use("/api", stationRoutes);
+app.use("/api", categoriesRoutes);
+app.use("/api/tags", tagsRoutes);
+
+// 404 handler
+app.use("*", (req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response) => {
@@ -80,14 +84,6 @@ app.use((err: Error, req: Request, res: Response) => {
       process.env.NODE_ENV === "development"
         ? err.message
         : "Internal server error",
-  });
-});
-
-// 404 handler
-app.use("*", (req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
   });
 });
 

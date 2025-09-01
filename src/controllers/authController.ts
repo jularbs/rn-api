@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { UserModel } from "../models/User";
 import { generateToken } from "../middleware/auth";
-import { RegisterRequest, LoginRequest } from "../types";
+import { RegisterRequest, LoginRequest } from "../types/authTypes";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {

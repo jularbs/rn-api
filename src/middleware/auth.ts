@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { Types } from "mongoose";
 import { UserModel } from "../models/User";
-import { UserRole } from "../types";
+import { UserRole } from "../types/authTypes";
 
 // Generate JWT token
 export const generateToken = (userId: Types.ObjectId): string => {

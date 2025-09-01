@@ -5,11 +5,11 @@ import path from "path";
 
 // Validate AWS configuration on startup
 if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-  console.warn("⚠️  AWS credentials not found in environment variables");
+  console.warn("AWS credentials not found in environment variables");
 }
 
 if (!process.env.AWS_S3_BUCKET) {
-  console.warn("⚠️  AWS_S3_BUCKET not set in environment variables");
+  console.warn("AWS_S3_BUCKET not set in environment variables");
 }
 
 // Configure AWS S3
@@ -283,7 +283,7 @@ export class S3Helper {
       return result;
     } catch (error: unknown) {
       const awsError = error as AWS.AWSError;
-      console.error("❌ S3 Upload Error:", {
+      console.error("S3 Upload Error:", {
         bucket,
         key,
         error: awsError.message,

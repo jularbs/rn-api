@@ -89,14 +89,14 @@ app.use((err: Error, req: Request, res: Response) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Radyo Natin API is running on port ${PORT}`);
+  console.log(`Radyo Natin API is running on port ${PORT}`);
 });
 
 // Graceful shutdown handling
 const gracefulShutdown = (): void => {
-  console.log("🔄 Received shutdown signal, shutting down gracefully...");
+  console.log("Received shutdown signal, shutting down gracefully...");
   server.close(() => {
-    console.log("🔴 HTTP server closed");
+    console.log("HTTP server closed");
     process.exit(0);
   });
 };

@@ -20,17 +20,17 @@ const connectDB = async (): Promise<void> => {
     if (!hasEventListeners) {
       // Handle connection events
       mongoose.connection.on('connected', () => {
-        console.log('🟢 Mongoose connected to MongoDB');
+        console.log('Mongoose connected to MongoDB');
         isConnected = true;
       });
 
       mongoose.connection.on('error', (err) => {
-        console.error('🔴 Mongoose connection error:', err);
+        console.error('Mongoose connection error:', err);
         isConnected = false;
       });
 
       mongoose.connection.on('disconnected', () => {
-        console.log('🟡 Mongoose disconnected from MongoDB');
+        console.log('Mongoose disconnected from MongoDB');
         isConnected = false;
       });
 
@@ -38,7 +38,7 @@ const connectDB = async (): Promise<void> => {
       const gracefulShutdown = async (): Promise<void> => {
         if (isConnected) {
           await mongoose.connection.close();
-          console.log('🔴 MongoDB connection closed through app termination');
+          console.log('MongoDB connection closed through app termination');
           isConnected = false;
         }
         process.exit(0);

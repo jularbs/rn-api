@@ -16,9 +16,9 @@
     },
     "exec": "ts-node --files src/index.ts",
     "events": {
-        "restart": "echo '🔄 Restarting server due to file changes...'",
-        "crash": "echo '💥 Server crashed - waiting for file changes to restart...'",
-        "start": "echo '🚀 Server started successfully'"
+        "restart": "echo 'Restarting server due to file changes...'",
+        "crash": "echo 'Server crashed - waiting for file changes to restart...'",
+        "start": "echo 'Server started successfully'"
     },
     "signal": "SIGTERM",
     "verbose": false

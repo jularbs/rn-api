@@ -38,8 +38,6 @@ export interface ITag {
 })
 
 @index({ name: 1 })
-@index({ slug: 1 })
-@index({ isActive: 1 })
 @index({ usageCount: -1 })
 @index({ createdAt: -1 })
 @modelOptions({

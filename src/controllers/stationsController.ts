@@ -1,21 +1,15 @@
 import { Request, Response } from "express";
 import { StationModel } from "../models/Station";
+import { MediaModel } from "../models/Media";
+import { s3Helper } from "../utils/s3Helper";
 import { Types } from "mongoose";
-import { CreateStationRequest, UpdateStationRequest } from "@/types";
+import formidable from "formidable";
+import fs from "fs";
 
 // GET /api/stations - Get all stations
-export const getAllStations = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getAllStations = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      status,
-      locationGroup,
-      page = "1",
-      limit = "10",
-      search,
-    } = req.query;
+    const { status, locationGroup, page = "1", limit = "10", search } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -29,11 +23,7 @@ export const getAllStations = async (
     }
 
     if (search && typeof search === "string") {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { frequency: { $regex: search, $options: "i" } },
-        { address: { $regex: search, $options: "i" } },
-      ];
+      filter.$or = [{ name: { $regex: search, $options: "i" } }, { frequency: { $regex: search, $options: "i" } }, { address: { $regex: search, $options: "i" } }];
     }
 
     // Pagination
@@ -42,10 +32,7 @@ export const getAllStations = async (
     const skip = (pageNum - 1) * limitNum;
 
     // Get stations with pagination
-    const stations = await StationModel.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum);
+    const stations = await StationModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum);
 
     // Get total count for pagination
     const total = await StationModel.countDocuments(filter);
@@ -78,10 +65,7 @@ export const getAllStations = async (
 };
 
 // GET /api/stations/:id - Get single station by ID
-export const getStationById = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getStationById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -121,14 +105,13 @@ export const getStationById = async (
 };
 
 // GET /api/stations/slug/:slug - Get single station by slug
-export const getStationBySlug = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getStationBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.params;
 
-    const station = await StationModel.findOne({ slug: slug.toLowerCase() });
+    const station = await StationModel.findOne({
+      slug: slug.toLowerCase(),
+    }).populate("logoImage");
 
     if (!station) {
       res.status(404).json({
@@ -155,21 +138,32 @@ export const getStationBySlug = async (
 };
 
 // POST /api/stations - Create new station
-export const createStation = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const createStation = async (req: Request, res: Response): Promise<void> => {
+  //TODOS: Still uploads in S3 even if failed in validation
   try {
-    const {
-      name,
-      slug,
-      frequency,
-      address,
-      locationGroup,
-      audioStreamURL,
-      videoStreamURL,
-      status = "active",
-    }: CreateStationRequest = req.body;
+    // Parse form data with formidable
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      filter: ({ mimetype }) => {
+        // Accept only image files
+        return mimetype?.startsWith("image/") || false;
+      },
+    });
+
+    const [fields, files] = await form.parse(req);
+
+    // Extract form fields (formidable returns arrays)
+    const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
+    const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
+    const frequency = Array.isArray(fields.frequency) ? fields.frequency[0] : fields.frequency;
+    const address = Array.isArray(fields.address) ? fields.address[0] : fields.address;
+    const locationGroup = Array.isArray(fields.locationGroup) ? fields.locationGroup[0] : fields.locationGroup;
+    const contactNumber = Array.isArray(fields.contactNumber) ? fields.contactNumber[0] : fields.contactNumber;
+    const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
+    const mapEmbedCode = Array.isArray(fields.mapEmbedCode) ? fields.mapEmbedCode[0] : fields.mapEmbedCode;
+    const audioStreamURL = Array.isArray(fields.audioStreamURL) ? fields.audioStreamURL[0] : fields.audioStreamURL;
+    const videoStreamURL = Array.isArray(fields.videoStreamURL) ? fields.videoStreamURL[0] : fields.videoStreamURL;
+    const status = Array.isArray(fields.status) ? fields.status[0] : fields.status || "active";
 
     // Validate required fields
     if (!name || !frequency || !locationGroup) {
@@ -182,7 +176,7 @@ export const createStation = async (
 
     // Check if station with slug already exists
     const existingStation = await StationModel.findOne({
-      slug: slug.toLowerCase(),
+      slug: slug?.toLowerCase(),
     });
     if (existingStation) {
       res.status(409).json({
@@ -192,20 +186,73 @@ export const createStation = async (
       return;
     }
 
+    let logoImageId: Types.ObjectId | undefined;
+
+    // Handle logo image upload if provided
+    const logoImageFile = files.logoImage;
+    if (logoImageFile) {
+      try {
+        const file = Array.isArray(logoImageFile) ? logoImageFile[0] : logoImageFile;
+
+        // Read file buffer
+        const fileBuffer = await fs.promises.readFile(file.filepath);
+
+        // Upload to S3 and compress
+        const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
+          folder: "stations/logos",
+          quality: 80,
+          maxWidth: 600,
+          maxHeight: 600,
+        });
+
+        // Create Media document
+        const mediaData = {
+          originalName: file.originalFilename || "logo.jpg",
+          key: uploadResult.key,
+          bucket: uploadResult.bucket,
+          url: uploadResult.url,
+          mimeType: uploadResult.mimeType,
+          size: uploadResult.size || file.size,
+        };
+
+        const media = new MediaModel(mediaData);
+        await media.save();
+        logoImageId = media._id;
+
+        // Clean up temporary file
+        await fs.promises.unlink(file.filepath);
+      } catch (uploadError) {
+        console.error("Logo upload error:", uploadError);
+        res.status(500).json({
+          success: false,
+          message: "Failed to upload logo image",
+          error: uploadError instanceof Error ? uploadError.message : "Unknown error",
+        });
+        return;
+      }
+    }
+
     // Create new station
     const stationData = {
-      name: name.trim(),
-      slug: slug.toLowerCase().trim(),
-      frequency: frequency.trim(),
+      name: name?.trim(),
+      slug: slug?.toLowerCase().trim(),
+      frequency: frequency?.trim(),
       address: address?.trim(),
-      locationGroup,
+      locationGroup: locationGroup as "luzon" | "visayas" | "mindanao",
+      logoImage: logoImageId,
+      contactNumber: contactNumber?.trim(),
+      email: email?.trim().toLowerCase(),
+      mapEmbedCode: mapEmbedCode?.trim(),
       audioStreamURL: audioStreamURL?.trim(),
       videoStreamURL: videoStreamURL?.trim(),
-      status,
+      status: status as "active" | "inactive",
     };
 
     const station = new StationModel(stationData);
     await station.save();
+
+    // Populate the logo image for response
+    await station.populate("logoImage");
 
     res.status(201).json({
       success: true,
@@ -220,9 +267,7 @@ export const createStation = async (
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -249,13 +294,9 @@ export const createStation = async (
 };
 
 // PUT /api/stations/:id - Update station by ID
-export const updateStation = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const updateStation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const updateData: UpdateStationRequest = req.body;
 
     // Validate ObjectId
     if (!Types.ObjectId.isValid(id)) {
@@ -276,10 +317,34 @@ export const updateStation = async (
       return;
     }
 
+    // Parse form data with formidable
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      filter: ({ mimetype }) => {
+        // Accept only image files
+        return mimetype?.startsWith("image/") || false;
+      },
+    });
+
+    const [fields, files] = await form.parse(req);
+
+    // Extract form fields (formidable returns arrays)
+    const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
+    const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
+    const frequency = Array.isArray(fields.frequency) ? fields.frequency[0] : fields.frequency;
+    const address = Array.isArray(fields.address) ? fields.address[0] : fields.address;
+    const locationGroup = Array.isArray(fields.locationGroup) ? fields.locationGroup[0] : fields.locationGroup;
+    const contactNumber = Array.isArray(fields.contactNumber) ? fields.contactNumber[0] : fields.contactNumber;
+    const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
+    const mapEmbedCode = Array.isArray(fields.mapEmbedCode) ? fields.mapEmbedCode[0] : fields.mapEmbedCode;
+    const audioStreamURL = Array.isArray(fields.audioStreamURL) ? fields.audioStreamURL[0] : fields.audioStreamURL;
+    const videoStreamURL = Array.isArray(fields.videoStreamURL) ? fields.videoStreamURL[0] : fields.videoStreamURL;
+    const status = Array.isArray(fields.status) ? fields.status[0] : fields.status;
+
     // If slug is being updated, check for uniqueness
-    if (updateData.slug && updateData.slug !== existingStation.slug) {
+    if (slug && slug !== existingStation.slug) {
       const slugExists = await StationModel.findOne({
-        slug: updateData.slug.toLowerCase(),
+        slug: slug.toLowerCase(),
         _id: { $ne: id },
       });
 
@@ -292,33 +357,95 @@ export const updateStation = async (
       }
     }
 
-    // Prepare update data
-    const sanitizedUpdateData: Partial<CreateStationRequest> = {};
+    let logoImageId: Types.ObjectId | undefined = existingStation.logoImage;
+    let oldMediaToDelete: { _id: Types.ObjectId; key: string; bucket: string } | null = null;
 
-    if (updateData.name) sanitizedUpdateData.name = updateData.name.trim();
-    if (updateData.slug)
-      sanitizedUpdateData.slug = updateData.slug.toLowerCase().trim();
-    if (updateData.frequency)
-      sanitizedUpdateData.frequency = updateData.frequency.trim();
-    if (updateData.address !== undefined)
-      sanitizedUpdateData.address = updateData.address?.trim();
-    if (updateData.locationGroup)
-      sanitizedUpdateData.locationGroup = updateData.locationGroup;
-    if (updateData.audioStreamURL !== undefined)
-      sanitizedUpdateData.audioStreamURL = updateData.audioStreamURL?.trim();
-    if (updateData.videoStreamURL !== undefined)
-      sanitizedUpdateData.videoStreamURL = updateData.videoStreamURL?.trim();
-    if (updateData.status) sanitizedUpdateData.status = updateData.status;
+    // Handle logo image upload if provided
+    const logoImageFile = files.logoImage;
+    if (logoImageFile) {
+      try {
+        const file = Array.isArray(logoImageFile) ? logoImageFile[0] : logoImageFile;
+
+        // Read file buffer
+        const fileBuffer = await fs.promises.readFile(file.filepath);
+
+        // Upload new logo to S3 and compress
+        const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
+          folder: "stations/logos",
+          quality: 80,
+          maxWidth: 600,
+          maxHeight: 600,
+        });
+
+        // Create new Media document
+        const mediaData = {
+          originalName: file.originalFilename || "logo.jpg",
+          key: uploadResult.key,
+          bucket: uploadResult.bucket,
+          url: uploadResult.url,
+          mimeType: uploadResult.mimeType,
+          size: uploadResult.size || file.size,
+        };
+
+        const media = new MediaModel(mediaData);
+        await media.save();
+
+        // If there was an existing logo, mark it for deletion
+        if (existingStation.logoImage) {
+          oldMediaToDelete = await MediaModel.findById(existingStation.logoImage);
+        }
+
+        logoImageId = media._id;
+
+        // Clean up temporary file
+        await fs.promises.unlink(file.filepath);
+      } catch (uploadError) {
+        console.error("Logo upload error:", uploadError);
+        res.status(500).json({
+          success: false,
+          message: "Failed to upload logo image",
+          error: uploadError instanceof Error ? uploadError.message : "Unknown error",
+        });
+        return;
+      }
+    }
+
+    // Prepare update data
+    const sanitizedUpdateData: Record<string, unknown> = {};
+
+    if (name !== undefined) sanitizedUpdateData.name = name?.trim();
+    if (slug !== undefined) sanitizedUpdateData.slug = slug?.toLowerCase().trim();
+    if (frequency !== undefined) sanitizedUpdateData.frequency = frequency?.trim();
+    if (address !== undefined) sanitizedUpdateData.address = address?.trim();
+    if (locationGroup !== undefined) sanitizedUpdateData.locationGroup = locationGroup as "luzon" | "visayas" | "mindanao";
+    if (contactNumber !== undefined) sanitizedUpdateData.contactNumber = contactNumber?.trim();
+    if (email !== undefined) sanitizedUpdateData.email = email?.trim().toLowerCase();
+    if (mapEmbedCode !== undefined) sanitizedUpdateData.mapEmbedCode = mapEmbedCode?.trim();
+    if (audioStreamURL !== undefined) sanitizedUpdateData.audioStreamURL = audioStreamURL?.trim();
+    if (videoStreamURL !== undefined) sanitizedUpdateData.videoStreamURL = videoStreamURL?.trim();
+    if (status !== undefined) sanitizedUpdateData.status = status as "active" | "inactive";
+    if (logoImageId !== undefined) sanitizedUpdateData.logoImage = logoImageId;
 
     // Update station
-    const updatedStation = await StationModel.findByIdAndUpdate(
-      id,
-      sanitizedUpdateData,
-      {
-        new: true,
-        runValidators: true,
+    const updatedStation = await StationModel.findByIdAndUpdate(id, sanitizedUpdateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    // Delete old logo image from S3 and database if a new one was uploaded
+    if (oldMediaToDelete) {
+      try {
+        await s3Helper.deleteFile(oldMediaToDelete.key, oldMediaToDelete.bucket);
+
+        await MediaModel.findByIdAndDelete(oldMediaToDelete._id);
+      } catch (deleteError) {
+        console.error("Error deleting old logo image:", deleteError);
+        // Don't fail the update if old file deletion fails
       }
-    );
+    }
+
+    // Populate the logo image for response
+    await updatedStation?.populate("logoImage");
 
     res.json({
       success: true,
@@ -333,9 +460,7 @@ export const updateStation = async (
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -362,10 +487,7 @@ export const updateStation = async (
 };
 
 // DELETE /api/stations/:id - Delete station by ID
-export const deleteStation = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const deleteStation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -388,11 +510,31 @@ export const deleteStation = async (
       return;
     }
 
+    // Delete logoImage in S3 if it exists
+    if (deletedStation.logoImage) {
+      try {
+        // Find the media document to get the S3 key
+        const media = await MediaModel.findById(deletedStation.logoImage);
+        if (media) {
+          // Delete from S3
+          await s3Helper.deleteFile(media.key, media.bucket);
+          console.log(`✅ Deleted S3 object: ${media.key}`);
+
+          // Delete media document from database
+          await MediaModel.findByIdAndDelete(deletedStation.logoImage);
+          console.log(`✅ Deleted media document: ${deletedStation.logoImage}`);
+        }
+      } catch (deleteError) {
+        console.error("Error deleting logo image:", deleteError);
+      }
+    }
+
     res.json({
       success: true,
       message: "Station deleted successfully",
       data: { station: deletedStation },
     });
+    return;
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Delete station error:", err);
@@ -405,10 +547,7 @@ export const deleteStation = async (
 };
 
 // PATCH /api/stations/:id/status - Toggle station status
-export const toggleStationStatus = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const toggleStationStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -434,17 +573,11 @@ export const toggleStationStatus = async (
     // Toggle status
     const newStatus = station.status === "active" ? "inactive" : "active";
 
-    const updatedStation = await StationModel.findByIdAndUpdate(
-      id,
-      { status: newStatus },
-      { new: true }
-    );
+    const updatedStation = await StationModel.findByIdAndUpdate(id, { status: newStatus }, { new: true });
 
     res.json({
       success: true,
-      message: `Station ${
-        newStatus === "active" ? "activated" : "deactivated"
-      } successfully`,
+      message: `Station ${newStatus === "active" ? "activated" : "deactivated"} successfully`,
       data: { station: updatedStation },
     });
   } catch (error: unknown) {

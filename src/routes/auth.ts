@@ -1,11 +1,7 @@
 import express from "express";
 import { authenticate } from "../middleware/auth";
 import { createRateLimiter } from "../middleware";
-import {
-  register,
-  login,
-  logout,
-} from "../controllers/authController";
+import { register, login, logout } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -19,8 +15,7 @@ const authRateLimit = createRateLimiter({
 const registerRateLimit = createRateLimiter({
   windowMs: 60 * 60 * 1000,
   maxRequests: 10,
-  message:
-    "Too many failed registration attempts. Please try again in an hour.",
+  message: "Too many failed registration attempts. Please try again in an hour.",
   skipSuccessfulRequests: true,
 }); // 10 registrations per hour
 

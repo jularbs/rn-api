@@ -10,10 +10,12 @@ import { Types } from "mongoose";
 
 export interface IMedia {
   _id: Types.ObjectId;
+  originalName: string;
   key: string;
   bucket: string;
   url?: string;
   mimeType: string;
+  size: number;
   alt?: string;
   caption?: string;
   createdAt: Date;
@@ -32,9 +34,6 @@ export interface IMedia {
   // Any pre-save logic can go here if needed
 })
 
-@index({ key: 1 })
-@index({ bucket: 1 })
-@index({ mimeType: 1 })
 @index({ createdAt: -1 })
 @modelOptions({
   schemaOptions: {
@@ -45,6 +44,13 @@ export interface IMedia {
   },
 })
 export class Media {
+  @prop({
+    required: true,
+    trim: true,
+    maxlength: [255, "Original name cannot exceed 255 characters"]
+  })
+  public originalName!: string;
+
   @prop({
     required: true,
     unique: true,
@@ -75,6 +81,12 @@ export class Media {
     index: true
   })
   public mimeType!: string;
+
+  @prop({
+    required: true,
+    min: [0, "File size cannot be negative"]
+  })
+  public size!: number;
 
   @prop({
     trim: true,

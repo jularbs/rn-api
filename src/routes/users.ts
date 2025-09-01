@@ -1,13 +1,6 @@
 import express from "express";
 import { authenticate, authorize } from "../middleware";
-import {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  restoreUser,
-} from "../controllers/usersController";
+import { getAllUsers, getUserById, createUser, updateUser, deleteUser, restoreUser } from "../controllers/usersController";
 
 const router = express.Router();
 
@@ -29,11 +22,6 @@ router.delete("/v1/user/:id", authenticate, authorize("admin"), deleteUser);
 
 // SPECIAL RESTful OPERATIONS
 // POST /api/users/:id/restore - Restore a soft deleted user (Admin only)
-router.post(
-  "/v1/user/:id/restore",
-  authenticate,
-  authorize("admin"),
-  restoreUser
-);
+router.post("/v1/user/:id/restore", authenticate, authorize("admin"), restoreUser);
 
 export default router;

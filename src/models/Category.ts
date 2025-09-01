@@ -16,7 +16,6 @@ export interface ICategory {
   slug: string;
   description?: string;
   parent?: Ref<Category>;
-  image?: string;
   isActive: boolean;
   sortOrder: number;
   metaTitle?: string;
@@ -84,12 +83,6 @@ export class Category {
     index: true
   })
   public parent?: Ref<Category>;
-
-  @prop({
-    trim: true,
-    maxlength: [255, "Image URL cannot exceed 255 characters"],
-  })
-  public image?: string;
 
   @prop({
     default: true,

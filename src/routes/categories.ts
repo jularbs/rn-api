@@ -1,12 +1,21 @@
 import { Router } from "express";
-import { getAllCategories, getCategoryById, getCategoryBySlug, createCategory, updateCategory, deleteCategory, toggleCategoryStatus, reorderCategories } from "../controllers/categoriesController";
+import {
+  getAllCategories,
+  getCategoryById,
+  getCategoryBySlug,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  toggleCategoryStatus,
+  reorderCategories,
+} from "../controllers/categoriesController";
 import { authenticate, authorize, optionalAuth } from "../middleware/auth";
 
 const router = Router();
 
-// Public routes - no authentication required
+// Public routes - authentication optional
 router.get("/v1/category", optionalAuth, getAllCategories);
-router.get("/v1/category/id/:id", getCategoryById);
+router.get("/v1/category/id/:id", optionalAuth, getCategoryById);
 router.get("/v1/category/:slug", getCategoryBySlug);
 
 // Admin/Moderator only routes

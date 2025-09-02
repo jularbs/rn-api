@@ -6,7 +6,7 @@ import slugify from "slugify";
 // GET /api/categories - Get all categories with filtering and pagination
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc", includeInactive = "false" } = req.query;
+    const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc" } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -14,22 +14,24 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
     // Filter by active status - authenticated users can see all by default
     const isAuthenticated = !!req.user;
 
-    if (includeInactive !== "true") {
-      if (isAuthenticated) {
-        // Authenticated users: respect isActive parameter, show all if not specified
-        if (isActive !== undefined) {
-          filter.isActive = isActive === "false" ? false : true;
-        }
-        // If isActive is not specified, show all categories (active and inactive)
-      } else {
-        // Unauthenticated users: only show active categories
-        filter.isActive = true;
+    if (isAuthenticated) {
+      // Authenticated users: respect isActive parameter, show all if not specified
+      if (isActive !== undefined) {
+        filter.isActive = isActive === "false" ? false : true;
       }
+      // If isActive is not specified, show all categories (active and inactive)
+    } else {
+      // Unauthenticated users: only show active categories
+      filter.isActive = true;
     }
 
     // Search functionality
     if (search && typeof search === "string") {
-      filter.$or = [{ name: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }, { slug: { $regex: search, $options: "i" } }];
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { slug: { $regex: search, $options: "i" } },
+      ];
     }
 
     // Pagination
@@ -90,7 +92,17 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const category = await CategoryModel.findById(id);
+    // Build filter object
+    const filter: Record<string, unknown> = {};
+    filter._id = id;
+
+    // Set filter to true if user is not authenticated to hide inactive categories
+    const isAuthenticated = !!req.user;
+    if (!isAuthenticated) {
+      filter.isActive = true;
+    }
+
+    const category = await CategoryModel.findOne(filter);
 
     if (!category) {
       res.status(404).json({
@@ -295,7 +307,8 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
     if (updateData.sortOrder !== undefined) sanitizedUpdateData.sortOrder = updateData.sortOrder;
     if (updateData.metaTitle !== undefined) sanitizedUpdateData.metaTitle = updateData.metaTitle?.trim();
-    if (updateData.metaDescription !== undefined) sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
+    if (updateData.metaDescription !== undefined)
+      sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
 
     // Update category
     const updatedCategory = await CategoryModel.findByIdAndUpdate(id, sanitizedUpdateData, {

@@ -7,7 +7,6 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
   try {
     const { 
       isActive, 
-      parent, 
       page = "1", 
       limit = "10", 
       search,
@@ -19,16 +18,20 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
     // Build filter object
     const filter: Record<string, unknown> = {};
 
-    // Filter by active status
+    // Filter by active status - authenticated users can see all by default
+    const isAuthenticated = !!req.user;
+    
     if (includeInactive !== "true") {
-      filter.isActive = isActive === "false" ? false : true;
-    }
-
-    // Filter by parent category
-    if (parent === "null" || parent === "") {
-      filter.parent = null;
-    } else if (parent && typeof parent === "string" && Types.ObjectId.isValid(parent)) {
-      filter.parent = parent;
+      if (isAuthenticated) {
+        // Authenticated users: respect isActive parameter, show all if not specified
+        if (isActive !== undefined) {
+          filter.isActive = isActive === "false" ? false : true;
+        }
+        // If isActive is not specified, show all categories (active and inactive)
+      } else {
+        // Unauthenticated users: only show active categories
+        filter.isActive = true;
+      }
     }
 
     // Search functionality
@@ -51,9 +54,8 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
     const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortField] = sortDirection;
 
-    // Get categories with pagination and population
+    // Get categories with pagination
     const categories = await CategoryModel.find(filter)
-      .populate("parent", "name slug")
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum);
@@ -88,62 +90,6 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// GET /api/categories/tree - Get category tree structure
-export const getCategoryTree = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { includeInactive = "false" } = req.query;
-
-    const filter: Record<string, unknown> = {};
-    if (includeInactive !== "true") {
-      filter.isActive = true;
-    }
-
-    // Get all categories
-    const allCategories = await CategoryModel.find(filter)
-      .populate("parent", "name slug")
-      .sort({ sortOrder: 1, name: 1 });
-
-    // Build tree structure
-    const categoryMap = new Map();
-    const rootCategories: Array<Record<string, unknown>> = [];
-
-    // First pass: create map of all categories
-    allCategories.forEach(category => {
-      categoryMap.set(category._id.toString(), {
-        ...category.toObject(),
-        children: []
-      });
-    });
-
-    // Second pass: build tree structure
-    allCategories.forEach(category => {
-      const categoryObj = categoryMap.get(category._id.toString());
-      if (category.parent) {
-        const parentObj = categoryMap.get(category.parent._id.toString());
-        if (parentObj) {
-          parentObj.children.push(categoryObj);
-        }
-      } else {
-        rootCategories.push(categoryObj);
-      }
-    });
-
-    res.json({
-      success: true,
-      message: "Category tree retrieved successfully",
-      data: { categories: rootCategories },
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Get category tree error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error retrieving category tree",
-      error: err.message,
-    });
-  }
-};
-
 // GET /api/categories/:id - Get single category by ID
 export const getCategoryById = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -158,8 +104,7 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const category = await CategoryModel.findById(id)
-      .populate("parent", "name slug");
+    const category = await CategoryModel.findById(id);
 
     if (!category) {
       res.status(404).json({
@@ -169,21 +114,10 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Get children count
-    const childrenCount = await CategoryModel.countDocuments({ 
-      parent: id, 
-      isActive: true 
-    });
-
     res.json({
       success: true,
       message: "Category retrieved successfully",
-      data: { 
-        category: {
-          ...category.toObject(),
-          childrenCount
-        }
-      },
+      data: { category },
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -204,7 +138,7 @@ export const getCategoryBySlug = async (req: Request, res: Response): Promise<vo
     const category = await CategoryModel.findOne({ 
       slug: slug.toLowerCase(),
       isActive: true 
-    }).populate("parent", "name slug");
+    });
 
     if (!category) {
       res.status(404).json({
@@ -214,21 +148,10 @@ export const getCategoryBySlug = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Get children
-    const children = await CategoryModel.find({ 
-      parent: category._id, 
-      isActive: true 
-    }).sort({ sortOrder: 1, name: 1 });
-
     res.json({
       success: true,
       message: "Category retrieved successfully",
-      data: { 
-        category: {
-          ...category.toObject(),
-          children
-        }
-      },
+      data: { category },
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -248,7 +171,6 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       name,
       slug,
       description,
-      parent,
       isActive = true,
       sortOrder,
       metaTitle,
@@ -262,27 +184,6 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
         message: "Category name is required",
       });
       return;
-    }
-
-    // Validate parent if provided
-    if (parent && !Types.ObjectId.isValid(parent)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid parent category ID",
-      });
-      return;
-    }
-
-    // Check if parent exists
-    if (parent) {
-      const parentCategory = await CategoryModel.findById(parent);
-      if (!parentCategory) {
-        res.status(404).json({
-          success: false,
-          message: "Parent category not found",
-        });
-        return;
-      }
     }
 
     // Generate slug if not provided
@@ -309,7 +210,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     // Get next sort order if not provided
     let finalSortOrder = sortOrder;
     if (finalSortOrder === undefined) {
-      finalSortOrder = await CategoryModel.getNextSortOrder(parent);
+      finalSortOrder = await CategoryModel.getNextSortOrder();
     }
 
     // Create new category
@@ -317,7 +218,6 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       name: name.trim(),
       slug: finalSlug.toLowerCase().trim(),
       description: description?.trim(),
-      parent: parent || null,
       isActive,
       sortOrder: finalSortOrder,
       metaTitle: metaTitle?.trim(),
@@ -326,9 +226,6 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
 
     const category = new CategoryModel(categoryData);
     await category.save();
-
-    // Populate parent for response
-    await category.populate("parent", "name slug");
 
     res.status(201).json({
       success: true,
@@ -396,50 +293,6 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Validate parent if provided
-    if (updateData.parent && updateData.parent !== existingCategory.parent?.toString()) {
-      if (!Types.ObjectId.isValid(updateData.parent)) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid parent category ID",
-        });
-        return;
-      }
-
-      // Check if parent exists
-      const parentCategory = await CategoryModel.findById(updateData.parent);
-      if (!parentCategory) {
-        res.status(404).json({
-          success: false,
-          message: "Parent category not found",
-        });
-        return;
-      }
-
-      // Prevent setting self as parent
-      if (updateData.parent === id) {
-        res.status(400).json({
-          success: false,
-          message: "Category cannot be its own parent",
-        });
-        return;
-      }
-
-      // Prevent circular references (simplified check)
-      let currentParent = await CategoryModel.findById(updateData.parent);
-      while (currentParent) {
-        if (currentParent._id.toString() === id) {
-          res.status(400).json({
-            success: false,
-            message: "Cannot create circular parent-child relationship",
-          });
-          return;
-        }
-        currentParent = currentParent.parent ? 
-          await CategoryModel.findById(currentParent.parent) : null;
-      }
-    }
-
     // Check slug uniqueness if being updated
     if (updateData.slug && updateData.slug !== existingCategory.slug) {
       const slugExists = await CategoryModel.findOne({
@@ -462,7 +315,6 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (updateData.name !== undefined) sanitizedUpdateData.name = updateData.name?.trim();
     if (updateData.slug !== undefined) sanitizedUpdateData.slug = updateData.slug?.toLowerCase().trim();
     if (updateData.description !== undefined) sanitizedUpdateData.description = updateData.description?.trim();
-    if (updateData.parent !== undefined) sanitizedUpdateData.parent = updateData.parent || null;
     if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
     if (updateData.sortOrder !== undefined) sanitizedUpdateData.sortOrder = updateData.sortOrder;
     if (updateData.metaTitle !== undefined) sanitizedUpdateData.metaTitle = updateData.metaTitle?.trim();
@@ -476,7 +328,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
         new: true,
         runValidators: true,
       }
-    ).populate("parent", "name slug");
+    );
 
     res.json({
       success: true,
@@ -523,7 +375,6 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { force = "false" } = req.query;
 
     // Validate ObjectId
     if (!Types.ObjectId.isValid(id)) {
@@ -544,32 +395,13 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Check if category has children
-    const childrenCount = await CategoryModel.countDocuments({ parent: id });
-    if (childrenCount > 0 && force !== "true") {
-      res.status(400).json({
-        success: false,
-        message: "Cannot delete category with children. Use force=true to delete all children as well.",
-        data: { childrenCount },
-      });
-      return;
-    }
-
-    if (force === "true" && childrenCount > 0) {
-      // Recursively delete all children
-      await deleteChildrenRecursively(id);
-    }
-
     // Delete the category
     const deletedCategory = await CategoryModel.findByIdAndDelete(id);
 
     res.json({
       success: true,
-      message: `Category${childrenCount > 0 ? " and children" : ""} deleted successfully`,
-      data: { 
-        category: deletedCategory,
-        deletedChildrenCount: force === "true" ? childrenCount : 0
-      },
+      message: "Category deleted successfully",
+      data: { category: deletedCategory },
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -581,17 +413,6 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     });
   }
 };
-
-// Helper function to recursively delete children
-async function deleteChildrenRecursively(parentId: string): Promise<void> {
-  const children = await CategoryModel.find({ parent: parentId });
-  
-  for (const child of children) {
-    await deleteChildrenRecursively(child._id.toString());
-    await CategoryModel.findByIdAndDelete(child._id);
-  }
-}
-
 // PATCH /api/categories/:id/toggle-status - Toggle category active status
 export const toggleCategoryStatus = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -623,7 +444,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response): Promise
       id,
       { isActive: newStatus },
       { new: true }
-    ).populate("parent", "name slug");
+    );
 
     res.json({
       success: true,

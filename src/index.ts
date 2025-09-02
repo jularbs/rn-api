@@ -35,7 +35,7 @@ connectDB();
 app.use(cors(corsConfig()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan("combined"));
+app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "common"));
 app.use(createRateLimiter({})); // 50 requests per minute by default
 
 // Routes

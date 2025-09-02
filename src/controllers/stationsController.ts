@@ -6,6 +6,9 @@ import { Types } from "mongoose";
 import formidable from "formidable";
 import fs from "fs";
 
+// Import firstValues helper from formidable
+const { firstValues } = require("formidable/src/helpers/firstValues.js");
+
 // GET /api/stations - Get all stations
 export const getAllStations = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -152,18 +155,9 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
 
     const [fields, files] = await form.parse(req);
 
-    // Extract form fields (formidable returns arrays)
-    const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
-    const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
-    const frequency = Array.isArray(fields.frequency) ? fields.frequency[0] : fields.frequency;
-    const address = Array.isArray(fields.address) ? fields.address[0] : fields.address;
-    const locationGroup = Array.isArray(fields.locationGroup) ? fields.locationGroup[0] : fields.locationGroup;
-    const contactNumber = Array.isArray(fields.contactNumber) ? fields.contactNumber[0] : fields.contactNumber;
-    const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
-    const mapEmbedCode = Array.isArray(fields.mapEmbedCode) ? fields.mapEmbedCode[0] : fields.mapEmbedCode;
-    const audioStreamURL = Array.isArray(fields.audioStreamURL) ? fields.audioStreamURL[0] : fields.audioStreamURL;
-    const videoStreamURL = Array.isArray(fields.videoStreamURL) ? fields.videoStreamURL[0] : fields.videoStreamURL;
-    const status = Array.isArray(fields.status) ? fields.status[0] : fields.status || "active";
+    // Extract form fields using firstValues helper
+    const formData = firstValues(form, fields);
+    const { name, slug, frequency, address, locationGroup, contactNumber, email, mapEmbedCode, audioStreamURL, videoStreamURL, status = "active" } = formData;
 
     // Validate required fields
     if (!name || !frequency || !locationGroup) {
@@ -328,18 +322,9 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
 
     const [fields, files] = await form.parse(req);
 
-    // Extract form fields (formidable returns arrays)
-    const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
-    const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
-    const frequency = Array.isArray(fields.frequency) ? fields.frequency[0] : fields.frequency;
-    const address = Array.isArray(fields.address) ? fields.address[0] : fields.address;
-    const locationGroup = Array.isArray(fields.locationGroup) ? fields.locationGroup[0] : fields.locationGroup;
-    const contactNumber = Array.isArray(fields.contactNumber) ? fields.contactNumber[0] : fields.contactNumber;
-    const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
-    const mapEmbedCode = Array.isArray(fields.mapEmbedCode) ? fields.mapEmbedCode[0] : fields.mapEmbedCode;
-    const audioStreamURL = Array.isArray(fields.audioStreamURL) ? fields.audioStreamURL[0] : fields.audioStreamURL;
-    const videoStreamURL = Array.isArray(fields.videoStreamURL) ? fields.videoStreamURL[0] : fields.videoStreamURL;
-    const status = Array.isArray(fields.status) ? fields.status[0] : fields.status;
+    // Extract form fields using firstValues helper
+    const formData = firstValues(form, fields);
+    const { name, slug, frequency, address, locationGroup, contactNumber, email, mapEmbedCode, audioStreamURL, videoStreamURL, status } = formData;
 
     // If slug is being updated, check for uniqueness
     if (slug && slug !== existingStation.slug) {

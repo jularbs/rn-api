@@ -37,7 +37,6 @@ export interface ITag {
   }
 })
 
-@index({ name: 1 })
 @index({ usageCount: -1 })
 @index({ createdAt: -1 })
 @modelOptions({

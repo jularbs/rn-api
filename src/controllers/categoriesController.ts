@@ -1,26 +1,19 @@
 import { Request, Response } from "express";
 import { CategoryModel } from "../models/Category";
 import { Types } from "mongoose";
+import slugify from "slugify";
 
 // GET /api/categories - Get all categories with filtering and pagination
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { 
-      isActive, 
-      page = "1", 
-      limit = "10", 
-      search,
-      sortBy = "sortOrder",
-      sortOrder = "asc",
-      includeInactive = "false"
-    } = req.query;
+    const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc", includeInactive = "false" } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
 
     // Filter by active status - authenticated users can see all by default
     const isAuthenticated = !!req.user;
-    
+
     if (includeInactive !== "true") {
       if (isAuthenticated) {
         // Authenticated users: respect isActive parameter, show all if not specified
@@ -36,11 +29,7 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
 
     // Search functionality
     if (search && typeof search === "string") {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { slug: { $regex: search, $options: "i" } }
-      ];
+      filter.$or = [{ name: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }, { slug: { $regex: search, $options: "i" } }];
     }
 
     // Pagination
@@ -55,10 +44,7 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
     sortObj[sortField] = sortDirection;
 
     // Get categories with pagination
-    const categories = await CategoryModel.find(filter)
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum);
+    const categories = await CategoryModel.find(filter).sort(sortObj).skip(skip).limit(limitNum);
 
     // Get total count for pagination
     const total = await CategoryModel.countDocuments(filter);
@@ -135,9 +121,9 @@ export const getCategoryBySlug = async (req: Request, res: Response): Promise<vo
   try {
     const { slug } = req.params;
 
-    const category = await CategoryModel.findOne({ 
+    const category = await CategoryModel.findOne({
       slug: slug.toLowerCase(),
-      isActive: true 
+      isActive: true,
     });
 
     if (!category) {
@@ -167,15 +153,7 @@ export const getCategoryBySlug = async (req: Request, res: Response): Promise<vo
 // POST /api/categories - Create new category
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      name,
-      slug,
-      description,
-      isActive = true,
-      sortOrder,
-      metaTitle,
-      metaDescription,
-    } = req.body;
+    const { name, slug, description, isActive = true, sortOrder, metaTitle, metaDescription } = req.body;
 
     // Validate required fields
     if (!name) {
@@ -189,10 +167,11 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     // Generate slug if not provided
     let finalSlug = slug;
     if (!finalSlug) {
-      finalSlug = name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .trim();
+      finalSlug = slugify(name, {
+        lower: true,
+        strict: true,
+        remove: /[*+~.()'"!:@]/g,
+      });
     }
 
     // Check if slug already exists
@@ -240,9 +219,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -321,14 +298,10 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (updateData.metaDescription !== undefined) sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
 
     // Update category
-    const updatedCategory = await CategoryModel.findByIdAndUpdate(
-      id,
-      sanitizedUpdateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const updatedCategory = await CategoryModel.findByIdAndUpdate(id, sanitizedUpdateData, {
+      new: true,
+      runValidators: true,
+    });
 
     res.json({
       success: true,
@@ -343,9 +316,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -440,11 +411,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response): Promise
     // Toggle status
     const newStatus = !category.isActive;
 
-    const updatedCategory = await CategoryModel.findByIdAndUpdate(
-      id,
-      { isActive: newStatus },
-      { new: true }
-    );
+    const updatedCategory = await CategoryModel.findByIdAndUpdate(id, { isActive: newStatus }, { new: true });
 
     res.json({
       success: true,

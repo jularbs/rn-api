@@ -20,3 +20,6 @@ export interface AppInfo {
 
 // Re-export option types
 export * from "./optionTypes";
+
+// Re-export top banner types
+export * from "./topBannerTypes";

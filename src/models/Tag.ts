@@ -193,11 +193,6 @@ export class Tag {
       .sort({ usageCount: -1 });
   }
 
-  // Static method to count tags
-  public static countActive(filter: Record<string, unknown> = {}) {
-    return TagModel.countDocuments(filter);
-  }
-
   // Static method to get tag statistics
   public static async getTagStats() {
     const stats = await TagModel.aggregate([

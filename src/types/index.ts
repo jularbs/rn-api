@@ -17,3 +17,6 @@ export interface AppInfo {
   version: string;
   status: string;
 }
+
+// Re-export option types
+export * from "./optionTypes";

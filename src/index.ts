@@ -17,6 +17,7 @@ import usersRoutes from "./routes/users";
 import stationRoutes from "./routes/stations";
 import categoriesRoutes from "./routes/categories";
 import tagsRoutes from "./routes/tags";
+import optionsRoutes from "./routes/options";
 
 //import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
@@ -65,6 +66,7 @@ app.use("/api", usersRoutes);
 app.use("/api", stationRoutes);
 app.use("/api", categoriesRoutes);
 app.use("/api/tags", tagsRoutes);
+app.use("/api/options", optionsRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {

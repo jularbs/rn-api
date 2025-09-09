@@ -10,7 +10,6 @@ import {
   createTagsBatch,
   updateTag,
   deleteTag,
-  toggleTagStatus,
   incrementTagUsage,
   decrementTagUsage,
   bulkUpdateTagUsage,
@@ -49,9 +48,6 @@ router.put("/:id", authenticate, authorize("admin", "moderator"), updateTag);
 
 // DELETE /api/tags/:id - Delete tag by ID
 router.delete("/:id", authenticate, authorize("admin"), deleteTag);
-
-// PATCH /api/tags/:id/toggle-status - Toggle tag active status
-router.patch("/:id/toggle-status", authenticate, authorize("admin", "moderator"), toggleTagStatus);
 
 // Analytics and statistics routes (admin only)
 // GET /api/tags/stats - Get tag statistics

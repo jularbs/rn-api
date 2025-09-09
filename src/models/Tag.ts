@@ -15,7 +15,6 @@ export interface ITag {
   slug: string;
   description?: string;
   color?: string;
-  isActive: boolean;
   usageCount: number;
   metaTitle?: string;
   metaDescription?: string;
@@ -79,12 +78,6 @@ export class Tag {
   public color?: string;
 
   @prop({
-    default: true,
-    index: true
-  })
-  public isActive!: boolean;
-
-  @prop({
     default: 0,
     min: [0, "Usage count cannot be negative"],
     index: true
@@ -131,30 +124,20 @@ export class Tag {
     return await this.save();
   }
 
-  // Static method to find active tags only
-  public static findActive() {
-    return TagModel.find({ isActive: true });
-  }
-
   // Static method to find all tags (including inactive)
   public static findAll() {
     return TagModel.find();
   }
 
-  // Static method to find one active tag
-  public static findOneActive(filter: Record<string, unknown>) {
-    return TagModel.findOne({ ...filter, isActive: true });
-  }
-
-  // Static method to find by slug (active only)
+  // Static method to find by slug
   public static findBySlugActive(slug: string) {
-    return TagModel.findOne({ slug, isActive: true });
+    return TagModel.findOne({ slug });
   }
 
   // Static method to find popular tags (high usage)
   public static findPopular(limit: number = 10) {
     return TagModel
-      .find({ isActive: true, usageCount: { $gte: 10 } })
+      .find({ usageCount: { $gte: 10 } })
       .sort({ usageCount: -1 })
       .limit(limit);
   }
@@ -166,7 +149,6 @@ export class Tag {
     
     return TagModel
       .find({ 
-        isActive: true,
         updatedAt: { $gte: dateThreshold }
       })
       .sort({ usageCount: -1, updatedAt: -1 })
@@ -175,13 +157,12 @@ export class Tag {
 
   // Static method to find unused tags
   public static findUnused() {
-    return TagModel.find({ usageCount: 0, isActive: true });
+    return TagModel.find({ usageCount: 0 });
   }
 
   // Static method to find tags by usage range
   public static findByUsageRange(min: number, max?: number) {
     const filter: Record<string, unknown> = { 
-      isActive: true,
       usageCount: { $gte: min }
     };
     
@@ -198,8 +179,7 @@ export class Tag {
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { description: { $regex: query, $options: 'i' } }
-      ],
-      isActive: true
+      ]
     });
   }
 
@@ -207,25 +187,20 @@ export class Tag {
   public static findSimilar(name: string, limit: number = 5) {
     return TagModel
       .find({
-        name: { $regex: name, $options: 'i' },
-        isActive: true
+        name: { $regex: name, $options: 'i' }
       })
       .limit(limit)
       .sort({ usageCount: -1 });
   }
 
-  // Static method to count active tags
+  // Static method to count tags
   public static countActive(filter: Record<string, unknown> = {}) {
-    return TagModel.countDocuments({ 
-      ...filter, 
-      isActive: true 
-    });
+    return TagModel.countDocuments(filter);
   }
 
   // Static method to get tag statistics
   public static async getTagStats() {
     const stats = await TagModel.aggregate([
-      { $match: { isActive: true } },
       {
         $group: {
           _id: null,
@@ -250,7 +225,6 @@ export class Tag {
   // Static method to get usage distribution
   public static async getUsageDistribution() {
     return TagModel.aggregate([
-      { $match: { isActive: true } },
       {
         $bucket: {
           groupBy: '$usageCount',
@@ -297,7 +271,7 @@ export class Tag {
     const tags: DocumentType<Tag>[] = [];
     
     for (const name of names) {
-      let tag = await TagModel.findOne({ name: name.trim(), isActive: true });
+      let tag = await TagModel.findOne({ name: name.trim() });
       
       if (!tag) {
         tag = new TagModel({

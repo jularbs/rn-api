@@ -1,3 +1,4 @@
+//TODOS: Code Review on all functions
 import { Request, Response } from "express";
 import { TagModel } from "../models/Tag";
 import { Types } from "mongoose";
@@ -6,13 +7,11 @@ import { Types } from "mongoose";
 export const getAllTags = async (req: Request, res: Response): Promise<void> => {
   try {
     const { 
-      isActive, 
       page = "1", 
       limit = "10", 
       search,
       sortBy = "name",
       sortOrder = "asc",
-      includeInactive = "false",
       minUsage,
       maxUsage,
       color
@@ -20,11 +19,6 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
 
     // Build filter object
     const filter: Record<string, unknown> = {};
-
-    // Filter by active status
-    if (includeInactive !== "true") {
-      filter.isActive = isActive === "false" ? false : true;
-    }
 
     // Filter by usage count range
     if (minUsage !== undefined || maxUsage !== undefined) {
@@ -230,8 +224,7 @@ export const getTagBySlug = async (req: Request, res: Response): Promise<void> =
     const { slug } = req.params;
 
     const tag = await TagModel.findOne({ 
-      slug: slug.toLowerCase(),
-      isActive: true 
+      slug: slug.toLowerCase()
     });
 
     if (!tag) {
@@ -266,7 +259,6 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
       slug,
       description,
       color,
-      isActive = true,
       metaTitle,
       metaDescription,
     } = req.body;
@@ -316,7 +308,6 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
       slug: finalSlug.toLowerCase().trim(),
       description: description?.trim(),
       color: color?.trim(),
-      isActive,
       metaTitle: metaTitle?.trim(),
       metaDescription: metaDescription?.trim(),
     };
@@ -453,7 +444,6 @@ export const updateTag = async (req: Request, res: Response): Promise<void> => {
     if (updateData.slug !== undefined) sanitizedUpdateData.slug = updateData.slug?.toLowerCase().trim();
     if (updateData.description !== undefined) sanitizedUpdateData.description = updateData.description?.trim();
     if (updateData.color !== undefined) sanitizedUpdateData.color = updateData.color?.trim();
-    if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
     if (updateData.metaTitle !== undefined) sanitizedUpdateData.metaTitle = updateData.metaTitle?.trim();
     if (updateData.metaDescription !== undefined) sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
 
@@ -563,54 +553,6 @@ export const deleteTag = async (req: Request, res: Response): Promise<void> => {
 };
 
 // PATCH /api/tags/:id/toggle-status - Toggle tag active status
-export const toggleTagStatus = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-
-    // Validate ObjectId
-    if (!Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid tag ID format",
-      });
-      return;
-    }
-
-    const tag = await TagModel.findById(id);
-
-    if (!tag) {
-      res.status(404).json({
-        success: false,
-        message: "Tag not found",
-      });
-      return;
-    }
-
-    // Toggle status
-    const newStatus = !tag.isActive;
-
-    const updatedTag = await TagModel.findByIdAndUpdate(
-      id,
-      { isActive: newStatus },
-      { new: true }
-    );
-
-    res.json({
-      success: true,
-      message: `Tag ${newStatus ? "activated" : "deactivated"} successfully`,
-      data: { tag: updatedTag },
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Toggle tag status error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error updating tag status",
-      error: err.message,
-    });
-  }
-};
-
 // PATCH /api/tags/:id/increment-usage - Increment tag usage count
 export const incrementTagUsage = async (req: Request, res: Response): Promise<void> => {
   try {

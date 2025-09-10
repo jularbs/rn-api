@@ -19,6 +19,8 @@ import categoriesRoutes from "./routes/categories";
 import tagsRoutes from "./routes/tags";
 import optionsRoutes from "./routes/options";
 import topBannerRoutes from "./routes/topBanners";
+import hostRoutes from "./routes/hosts";
+import mediaRoutes from "./routes/media";
 
 //import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
@@ -69,6 +71,8 @@ app.use("/api", categoriesRoutes);
 app.use("/api/tags", tagsRoutes);
 app.use("/api/options", optionsRoutes);
 app.use("/api/top-banners", topBannerRoutes);
+app.use("/api/hosts", hostRoutes);
+app.use("/api/media", mediaRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {

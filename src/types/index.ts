@@ -24,5 +24,6 @@ export * from "./categoryTypes";
 export * from "./hostTypes";
 export * from "./mediaTypes";
 export * from "./optionTypes";
+export * from "./postTypes";
 export * from "./stationTypes";
 export * from "./topBannerTypes";

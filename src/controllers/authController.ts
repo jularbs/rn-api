@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { UserModel } from "../models/User";
 import { generateToken } from "../middleware/auth";
-import { RegisterRequest, LoginRequest } from "../types/authTypes";
+import { RegisterRequest, LoginRequest, PasswordResetRequest } from "../types/authTypes";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -179,4 +179,77 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     success: true,
     message: "Logged out successfully",
   });
+};
+
+// POST /api/auth/request-password-reset - Request password reset
+export const requestPasswordReset = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email }: PasswordResetRequest = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+      return;
+    }
+
+    // Find user by email
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // For security reasons, always return success even if user doesn't exist
+      res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+      return;
+    }
+
+    // Check if user is soft deleted
+    if (user.deletedAt) {
+      res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+      return;
+    }
+
+    // Check if user account is verified
+    if (!user.accountVerified) {
+      res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+      return;
+    }
+
+    // Generate password reset token (expires in 2 hours)
+    const resetToken = user.createPasswordResetToken();
+
+    // Save user with reset token
+    await user.save({ validateBeforeSave: false });
+
+    // TODO: In a real application, you would send an email with the reset token
+    // For now, we'll return the token in the response (remove this in production)
+    // Example email service integration:
+    // await sendPasswordResetEmail(user.email, resetToken);
+
+    res.json({
+      success: true,
+      message: "If an account with that email exists, a password reset link has been sent.",
+      // Remove this in production - only for development/testing
+      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined,
+    });
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error in password reset request:', err);
+    
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while processing your request. Please try again later.",
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
 };

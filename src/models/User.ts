@@ -158,7 +158,7 @@ export class User {
       .update(resetToken)
       .digest("hex");
 
-    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    this.passwordResetExpires = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
 
     return resetToken;
   }

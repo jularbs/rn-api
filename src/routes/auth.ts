@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../middleware/auth";
 import { createRateLimiter } from "../middleware";
-import { register, login, logout } from "../controllers/authController";
+import { register, login, logout, requestPasswordReset } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -27,5 +27,8 @@ router.post("/v1/auth/login", authRateLimit, login);
 
 // POST /api/auth/logout - Logout user
 router.post("/v1/auth/logout", authenticate, logout);
+
+// POST /api/auth/request-password-reset - Request password reset
+router.post("/v1/auth/request-password-reset", authRateLimit, requestPasswordReset);
 
 export default router;

@@ -57,3 +57,6 @@ jspm_packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# TODOS file trackers
+todos.txt

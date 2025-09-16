@@ -44,6 +44,29 @@ export class Options {
     return OptionsModel.findOne({ key }).populate("updatedBy media");
   }
 
+  // Static method to set option value
+  public static async setOption(
+    key: string,
+    value: string,
+    updatedBy: string | Types.ObjectId,
+    media?: string | Types.ObjectId
+  ) {
+    const updateData: Record<string, unknown> = {
+      value,
+      updatedBy: typeof updatedBy === "string" ? new Types.ObjectId(updatedBy) : updatedBy,
+    };
+
+    if (media) {
+      updateData.media = typeof media === "string" ? new Types.ObjectId(media) : media;
+    }
+
+    return OptionsModel.findOneAndUpdate({ key }, updateData, {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }).populate("updatedBy media");
+  }
+
   // Static method to get multiple options by keys
   public static getByKeys(keys: string[]) {
     return OptionsModel.find({ key: { $in: keys } }).populate("updatedBy media");

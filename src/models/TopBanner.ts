@@ -1,11 +1,4 @@
-import {
-  prop,
-  getModelForClass,
-  modelOptions,
-  Severity,
-  index,
-  pre,
-} from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, pre } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
 
@@ -51,10 +44,9 @@ export interface ITopBanner {
 @modelOptions({
   schemaOptions: {
     timestamps: true,
-    collection: "topbanners",
-  },
-  options: {
-    allowMixed: Severity.ALLOW,
+    id: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 })
 export class TopBanner implements ITopBanner {
@@ -101,30 +93,18 @@ export class TopBanner implements ITopBanner {
 
   // Instance method to increment click count
   public async incrementClicks() {
-    return await TopBannerModel.findByIdAndUpdate(
-      this._id,
-      { $inc: { clickCount: 1 } },
-      { new: true }
-    );
+    return await TopBannerModel.findByIdAndUpdate(this._id, { $inc: { clickCount: 1 } }, { new: true });
   }
 
   // Instance method to increment impression count
   public async incrementImpressions() {
-    return await TopBannerModel.findByIdAndUpdate(
-      this._id,
-      { $inc: { impressionCount: 1 } },
-      { new: true }
-    );
+    return await TopBannerModel.findByIdAndUpdate(this._id, { $inc: { impressionCount: 1 } }, { new: true });
   }
 
   // Instance method to check if banner is currently active
   public isCurrentlyActive(): boolean {
     const now = new Date();
-    return (
-      this.visibility === BannerVisibility.ACTIVE &&
-      this.startDate <= now &&
-      this.endDate >= now
-    );
+    return this.visibility === BannerVisibility.ACTIVE && this.startDate <= now && this.endDate >= now;
   }
 
   // Instance method to get click-through rate
@@ -201,10 +181,7 @@ export class TopBanner implements ITopBanner {
                 { $eq: ["$impressionCount", 0] },
                 0,
                 {
-                  $multiply: [
-                    { $divide: ["$clickCount", "$impressionCount"] },
-                    100,
-                  ],
+                  $multiply: [{ $divide: ["$clickCount", "$impressionCount"] }, 100],
                 },
               ],
             },
@@ -225,10 +202,7 @@ export class TopBanner implements ITopBanner {
   }
 
   // Static method to get top performing banners
-  public static getTopPerformingBanners(
-    limit = 10,
-    sortBy: "clicks" | "impressions" | "ctr" = "ctr"
-  ) {
+  public static getTopPerformingBanners(limit = 10, sortBy: "clicks" | "impressions" | "ctr" = "ctr") {
     switch (sortBy) {
       case "clicks":
         return TopBannerModel.find({})
@@ -250,10 +224,7 @@ export class TopBanner implements ITopBanner {
                   { $eq: ["$impressionCount", 0] },
                   0,
                   {
-                    $multiply: [
-                      { $divide: ["$clickCount", "$impressionCount"] },
-                      100,
-                    ],
+                    $multiply: [{ $divide: ["$clickCount", "$impressionCount"] }, 100],
                   },
                 ],
               },

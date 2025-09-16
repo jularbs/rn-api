@@ -1,4 +1,4 @@
-import { prop, getModelForClass, modelOptions, Severity, index, pre } from '@typegoose/typegoose';
+import { prop, getModelForClass, modelOptions, index, pre } from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 import slugify from 'slugify';
 
@@ -22,12 +22,12 @@ export interface IHost {
   updatedAt: Date;
 }
 
-@pre<Host>('save', function() {
-  if (this.isModified('name') || this.isNew) {
+@pre<Host>("save", function () {
+  if (this.isModified("name") || this.isNew) {
     this.slug = slugify(this.name, {
       lower: true,
       strict: true,
-      trim: true
+      trim: true,
     });
   }
 })
@@ -38,13 +38,12 @@ export interface IHost {
 @modelOptions({
   schemaOptions: {
     timestamps: true,
-    collection: 'hosts'
+    id: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
-  options: {
-    allowMixed: Severity.ALLOW
-  }
 })
-export class Host implements IHost {
+export class Host {
   public _id!: Types.ObjectId;
 
   @prop({ required: true, trim: true, maxlength: 200 })
@@ -59,7 +58,7 @@ export class Host implements IHost {
   @prop({ trim: true, lowercase: true })
   public email?: string;
 
-  @prop({ ref: 'Media' })
+  @prop({ ref: "Media" })
   public image?: Types.ObjectId;
 
   @prop({ type: () => Object })
@@ -73,36 +72,25 @@ export class Host implements IHost {
   @prop({ default: true })
   public isActive!: boolean;
 
-  @prop({ ref: 'Program', type: () => [Types.ObjectId], default: [] })
+  @prop({ ref: "Program", type: () => [Types.ObjectId], default: [] })
   public programs!: Types.ObjectId[];
 
-  @prop({ default: Date.now })
   public createdAt!: Date;
-
-  @prop({ default: Date.now })
   public updatedAt!: Date;
 
   // Instance method to add a program
   public async addProgram(programId: string | Types.ObjectId) {
-    const id = typeof programId === 'string' ? new Types.ObjectId(programId) : programId;
+    const id = typeof programId === "string" ? new Types.ObjectId(programId) : programId;
     if (!this.programs.includes(id)) {
       this.programs.push(id);
     }
-    return await HostModel.findByIdAndUpdate(
-      this._id,
-      { $addToSet: { programs: id } },
-      { new: true }
-    );
+    return await HostModel.findByIdAndUpdate(this._id, { $addToSet: { programs: id } }, { new: true });
   }
 
   // Instance method to remove a program
   public async removeProgram(programId: string | Types.ObjectId) {
-    const id = typeof programId === 'string' ? new Types.ObjectId(programId) : programId;
-    return await HostModel.findByIdAndUpdate(
-      this._id,
-      { $pull: { programs: id } },
-      { new: true }
-    );
+    const id = typeof programId === "string" ? new Types.ObjectId(programId) : programId;
+    return await HostModel.findByIdAndUpdate(this._id, { $pull: { programs: id } }, { new: true });
   }
 
   // Instance method to get program count
@@ -114,8 +102,8 @@ export class Host implements IHost {
   public static findWithPrograms() {
     return HostModel.find({
       programs: { $exists: true, $not: { $size: 0 } },
-      isActive: true
-    }).populate('programs image');
+      isActive: true,
+    }).populate("programs image");
   }
 
   // Static method to get host statistics
@@ -126,37 +114,32 @@ export class Host implements IHost {
         $group: {
           _id: null,
           totalHosts: { $sum: 1 },
-          avgProgramsPerHost: { $avg: { $size: '$programs' } },
+          avgProgramsPerHost: { $avg: { $size: "$programs" } },
           hostsWithPrograms: {
             $sum: {
-              $cond: [
-                { $gt: [{ $size: '$programs' }, 0] },
-                1,
-                0
-              ]
-            }
-          }
-        }
-      }
+              $cond: [{ $gt: [{ $size: "$programs" }, 0] }, 1, 0],
+            },
+          },
+        },
+      },
     ]);
 
-    return stats[0] || {
-      totalHosts: 0,
-      avgProgramsPerHost: 0,
-      hostsWithPrograms: 0
-    };
+    return (
+      stats[0] || {
+        totalHosts: 0,
+        avgProgramsPerHost: 0,
+        hostsWithPrograms: 0,
+      }
+    );
   }
 
   // Static method to search hosts
   public static searchHosts(query: string) {
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query, "i");
     return HostModel.find({
-      $or: [
-        { name: searchRegex },
-        { bio: searchRegex }
-      ],
-      isActive: true
-    }).populate('programs image');
+      $or: [{ name: searchRegex }, { bio: searchRegex }],
+      isActive: true,
+    }).populate("programs image");
   }
 
   // Static method to get top hosts by program count
@@ -165,11 +148,11 @@ export class Host implements IHost {
       { $match: { isActive: true } },
       {
         $addFields: {
-          programCount: { $size: '$programs' }
-        }
+          programCount: { $size: "$programs" },
+        },
       },
       { $sort: { programCount: -1 } },
-      { $limit: limit }
+      { $limit: limit },
     ]);
   }
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../middleware/auth";
 import { createRateLimiter } from "../middleware";
-import { register, login, logout, requestPasswordReset } from "../controllers/authController";
+import { register, login, logout, requestPasswordReset, resetPassword, changePassword, verifyEmail, resendEmailVerification } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -30,5 +30,17 @@ router.post("/v1/auth/logout", authenticate, logout);
 
 // POST /api/auth/request-password-reset - Request password reset
 router.post("/v1/auth/request-password-reset", authRateLimit, requestPasswordReset);
+
+// POST /api/auth/reset-password - Reset password using token
+router.post("/v1/auth/reset-password", authRateLimit, resetPassword);
+
+// PUT /api/auth/change-password - Change password for logged-in users
+router.put("/v1/auth/change-password", authenticate, authRateLimit, changePassword);
+
+// GET /api/auth/verify-email - Verify user's email address
+router.get("/v1/auth/verify-email", authRateLimit, verifyEmail);
+
+// POST /api/auth/resend-verification - Resend email verification
+router.post("/v1/auth/resend-verification", authRateLimit, resendEmailVerification);
 
 export default router;

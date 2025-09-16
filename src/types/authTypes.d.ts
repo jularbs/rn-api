@@ -17,8 +17,20 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface PasswordResetRequest {
+export interface RequestPasswordResetRequest {
   email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export type UserRole = "user" | "admin" | "moderator" | "owner";

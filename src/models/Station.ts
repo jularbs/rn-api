@@ -1,11 +1,4 @@
-import {
-  prop,
-  getModelForClass,
-  modelOptions,
-  index,
-  DocumentType,
-  pre,
-} from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, DocumentType, pre } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
 import validator from "validator";
@@ -34,11 +27,10 @@ export interface IStation {
     this.slug = slugify(this.name, {
       lower: true,
       strict: true,
-      remove: /[*+~.()'"!:@]/g
+      remove: /[*+~.()'"!:@]/g,
     });
   }
 })
-
 @index({ locationGroup: 1 })
 @index({ status: 1 })
 @index({ createdAt: -1 })
@@ -88,7 +80,7 @@ export class Station {
   })
   public locationGroup!: "luzon" | "visayas" | "mindanao";
 
-  @prop({ ref: 'Media' })
+  @prop({ ref: "Media" })
   public logoImage?: Types.ObjectId;
 
   @prop({
@@ -100,10 +92,7 @@ export class Station {
   @prop({
     trim: true,
     lowercase: true,
-    validate: [
-      validator.isEmail,
-      "Please provide a valid email address",
-    ],
+    validate: [validator.isEmail, "Please provide a valid email address"],
   })
   public email?: string;
 
@@ -114,19 +103,13 @@ export class Station {
 
   @prop({
     trim: true,
-    validate: [
-      validator.isURL,
-      "Please provide a valid URL for the audio stream",
-    ],
+    validate: [validator.isURL, "Please provide a valid URL for the audio stream"],
   })
   public audioStreamURL?: string;
 
   @prop({
     trim: true,
-    validate: [
-      validator.isURL,
-      "Please provide a valid URL for the video stream",
-    ],
+    validate: [validator.isURL, "Please provide a valid URL for the video stream"],
   })
   public videoStreamURL?: string;
 
@@ -142,6 +125,170 @@ export class Station {
 
   public createdAt!: Date;
   public updatedAt!: Date;
+
+  // Static method to find all stations
+  public static findAll() {
+    return StationModel.find();
+  }
+
+  // Static method to find active stations
+  public static findActive() {
+    return StationModel.find({ status: "active" });
+  }
+
+  // Static method to find inactive stations
+  public static findInactive() {
+    return StationModel.find({ status: "inactive" });
+  }
+
+  // Static method to find by slug
+  public static findBySlug(slug: string) {
+    return StationModel.findOne({ slug });
+  }
+
+  // Static method to find by location group
+  public static findByLocationGroup(locationGroup: "luzon" | "visayas" | "mindanao") {
+    return StationModel.find({ locationGroup, status: "active" }).sort({ name: 1 });
+  }
+
+  // Static method to search stations by name or frequency
+  public static search(query: string) {
+    return StationModel.find({
+      $or: [{ name: { $regex: query, $options: "i" } }, { frequency: { $regex: query, $options: "i" } }],
+      status: "active",
+    });
+  }
+
+  // Static method to find stations with streaming URLs
+  public static findWithAudioStream() {
+    return StationModel.find({
+      audioStreamURL: { $exists: true, $nin: [null, ""] },
+      status: "active",
+    });
+  }
+
+  // Static method to find stations with video streaming URLs
+  public static findWithVideoStream() {
+    return StationModel.find({
+      videoStreamURL: { $exists: true, $nin: [null, ""] },
+      status: "active",
+    });
+  }
+
+  // Static method to find stations with both audio and video streams
+  public static findWithBothStreams() {
+    return StationModel.find({
+      audioStreamURL: { $exists: true, $nin: [null, ""] },
+      videoStreamURL: { $exists: true, $nin: [null, ""] },
+      status: "active",
+    });
+  }
+
+  // Static method to find stations with logos
+  public static findWithLogos() {
+    return StationModel.find({
+      logoImage: { $exists: true, $ne: null },
+      status: "active",
+    }).populate("logoImage");
+  }
+
+  // Static method to get station statistics
+  public static async getStationStats() {
+    const stats = await StationModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalStations: { $sum: 1 },
+          activeStations: {
+            $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] },
+          },
+          inactiveStations: {
+            $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] },
+          },
+          stationsWithAudio: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $ne: ["$audioStreamURL", null] }, { $ne: ["$audioStreamURL", ""] }],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          stationsWithVideo: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $ne: ["$videoStreamURL", null] }, { $ne: ["$videoStreamURL", ""] }],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          stationsWithLogos: {
+            $sum: {
+              $cond: [{ $ne: ["$logoImage", null] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    return (
+      stats[0] || {
+        totalStations: 0,
+        activeStations: 0,
+        inactiveStations: 0,
+        stationsWithAudio: 0,
+        stationsWithVideo: 0,
+        stationsWithLogos: 0,
+      }
+    );
+  }
+
+  // Static method to get stations by location group statistics
+  public static async getLocationGroupStats() {
+    return StationModel.aggregate([
+      {
+        $group: {
+          _id: "$locationGroup",
+          count: { $sum: 1 },
+          active: {
+            $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] },
+          },
+          inactive: {
+            $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  // Static method to activate a station
+  public static async activateStation(stationId: string | Types.ObjectId) {
+    return StationModel.findByIdAndUpdate(stationId, { status: "active" }, { new: true });
+  }
+
+  // Static method to deactivate a station
+  public static async deactivateStation(stationId: string | Types.ObjectId) {
+    return StationModel.findByIdAndUpdate(stationId, { status: "inactive" }, { new: true });
+  }
+
+  // Static method to bulk update stations status
+  public static async bulkUpdateStatus(stationIds: (string | Types.ObjectId)[], status: "active" | "inactive") {
+    return StationModel.updateMany({ _id: { $in: stationIds } }, { status });
+  }
+
+  // Static method to find stations missing required streaming info
+  public static findMissingStreamInfo() {
+    return StationModel.find({
+      $or: [{ audioStreamURL: { $in: [null, ""] } }, { videoStreamURL: { $in: [null, ""] } }],
+      status: "active",
+    });
+  }
 }
 
 export const StationModel = getModelForClass(Station);

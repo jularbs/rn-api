@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  getAllCategories,
+  getCategories,
   getCategoryById,
   getCategoryBySlug,
   createCategory,
@@ -14,7 +14,7 @@ import { authenticate, authorize, optionalAuth } from "../middleware/auth";
 const router = Router();
 
 // Public routes - authentication optional
-router.get("/v1/category", optionalAuth, getAllCategories);
+router.get("/v1/category", optionalAuth, getCategories);
 router.get("/v1/category/id/:id", optionalAuth, getCategoryById);
 router.get("/v1/category/:slug", getCategoryBySlug);
 

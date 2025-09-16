@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import slugify from "slugify";
 
 // GET /api/categories - Get all categories with filtering and pagination
-export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
+export const getCategories = async (req: Request, res: Response): Promise<void> => {
   try {
     const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc" } = req.query;
 
@@ -221,7 +221,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     res.status(201).json({
       success: true,
       message: "Category created successfully",
-      data: { category },
+      data: category,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -319,7 +319,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     res.json({
       success: true,
       message: "Category updated successfully",
-      data: { category: updatedCategory },
+      data: updatedCategory,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -385,7 +385,7 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     res.json({
       success: true,
       message: "Category deleted successfully",
-      data: { category: deletedCategory },
+      data: deletedCategory,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -397,6 +397,7 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+
 // PATCH /api/categories/:id/toggle-status - Toggle category active status
 export const toggleCategoryStatus = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -429,7 +430,7 @@ export const toggleCategoryStatus = async (req: Request, res: Response): Promise
     res.json({
       success: true,
       message: `Category ${newStatus ? "activated" : "deactivated"} successfully`,
-      data: { category: updatedCategory },
+      data: updatedCategory,
     });
   } catch (error: unknown) {
     const err = error as Error;

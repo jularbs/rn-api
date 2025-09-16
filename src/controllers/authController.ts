@@ -2,19 +2,18 @@ import { Request, Response } from "express";
 import { createHash } from "crypto";
 import { UserModel } from "../models/User";
 import { generateToken } from "../middleware/auth";
-import { RegisterRequest, LoginRequest, RequestPasswordResetRequest, ResetPasswordRequest, ChangePasswordRequest } from "../types/authTypes";
+import {
+  RegisterRequest,
+  LoginRequest,
+  RequestPasswordResetRequest,
+  ResetPasswordRequest,
+  ChangePasswordRequest,
+} from "../types/authTypes";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      phone,
-      role,
-    }: RegisterRequest = req.body;
+    const { firstName, lastName, email, password, phone, role }: RegisterRequest = req.body;
 
     // Check if user already exists
     const existingUser = await UserModel.findOne({ email });
@@ -41,8 +40,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({
       success: true,
-      message:
-        "User registered successfully. Please wait for account activation.",
+      message: "User registered successfully. Please wait for account activation.",
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -52,9 +50,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -116,8 +112,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!user.accountVerified) {
       res.status(401).json({
         success: false,
-        message:
-          "Account is not yet activated. Please wait for admin approval.",
+        message: "Account is not yet activated. Please wait for admin approval.",
       });
       return;
     }
@@ -240,17 +235,16 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
       success: true,
       message: "If an account with that email exists, a password reset link has been sent.",
       // Remove this in production - only for development/testing
-      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined,
+      resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
     });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in password reset request:', err);
-    
+    console.error("Error in password reset request:", err);
+
     res.status(500).json({
       success: false,
       message: "An error occurred while processing your request. Please try again later.",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -349,15 +343,14 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       success: true,
       message: "Password has been reset successfully. You can now login with your new password.",
     });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in password reset:', err);
-    
+    console.error("Error in password reset:", err);
+
     res.status(500).json({
       success: false,
       message: "An error occurred while resetting your password. Please try again later.",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -474,15 +467,14 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
       success: true,
       message: "Password changed successfully",
     });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in change password:', err);
-    
+    console.error("Error in change password:", err);
+
     res.status(500).json({
       success: false,
       message: "An error occurred while changing your password. Please try again later.",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -490,10 +482,10 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 // GET /api/auth/verify-email - Verify user's email address
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { token } = req.query;
+    const { token, id } = req.query;
 
     // Validation
-    if (!token || typeof token !== 'string') {
+    if (!token || typeof token !== "string") {
       res.status(400).json({
         success: false,
         message: "Verification token is required",
@@ -503,6 +495,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 
     // Find user with matching email verification token
     const user = await UserModel.findOne({
+      _id: id,
       emailVerificationToken: token,
     }).select("+emailVerificationToken");
 
@@ -564,15 +557,14 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
         expiresIn: process.env.JWT_EXPIRES_IN || "7d",
       },
     });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in email verification:', err);
-    
+    console.error("Error in email verification:", err);
+
     res.status(500).json({
       success: false,
       message: "An error occurred while verifying your email. Please try again later.",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -638,18 +630,16 @@ export const resendEmailVerification = async (req: Request, res: Response): Prom
       success: true,
       message: "If an account with that email exists and is unverified, a verification email has been sent.",
       // Remove this in production - only for development/testing
-      verificationToken: process.env.NODE_ENV === 'development' ? user.emailVerificationToken : undefined,
+      verificationToken: process.env.NODE_ENV === "development" ? user.emailVerificationToken : undefined,
     });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in resend email verification:', err);
-    
+    console.error("Error in resend email verification:", err);
+
     res.status(500).json({
       success: false,
       message: "An error occurred while processing your request. Please try again later.",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
-

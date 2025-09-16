@@ -1,12 +1,4 @@
-import {
-  prop,
-  getModelForClass,
-  modelOptions,
-  index,
-  pre,
-  DocumentType,
-  Ref
-} from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, pre, DocumentType, Ref } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
 
@@ -15,7 +7,7 @@ export interface IProgram {
   name: string;
   slug: string;
   description?: string;
-  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+  day: number[];
   startTime: string;
   endTime: string;
   duration: number; // in minutes
@@ -37,24 +29,23 @@ export interface IProgram {
     this.slug = slugify(this.name, {
       lower: true,
       strict: true,
-      remove: /[*+~.()'"!:@]/g
+      remove: /[*+~.()'"!:@]/g,
     });
   }
-  
+
   // Calculate duration if not provided
   if (this.startTime && this.endTime && !this.duration) {
     const start = this.parseTime(this.startTime);
     const end = this.parseTime(this.endTime);
-    
+
     let duration = end - start;
     if (duration < 0) {
       duration += 24 * 60; // Handle overnight programs
     }
-    
+
     this.duration = duration;
   }
 })
-
 @index({ name: 1 })
 @index({ slug: 1 })
 @index({ day: 1 })
@@ -75,8 +66,7 @@ export class Program {
   @prop({
     required: true,
     trim: true,
-    maxlength: [100, "Program name cannot exceed 100 characters"],
-    index: true
+    index: true,
   })
   public name!: string;
 
@@ -84,8 +74,7 @@ export class Program {
     unique: true,
     lowercase: true,
     trim: true,
-    maxlength: [120, "Slug cannot exceed 120 characters"],
-    index: true
+    index: true,
   })
   public slug!: string;
 
@@ -97,48 +86,51 @@ export class Program {
 
   @prop({
     required: true,
-    enum: {
-      values: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-      message: "'{VALUE}' is not a valid day of the week."
+    type: () => [Number],
+    validate: {
+      validator: function (days: number[]) {
+        return days && days.length > 0 && days.every((day) => day >= 0 && day <= 6);
+      },
+      message: "Day array must contain numbers between 0-6 (Sunday=0, Monday=1, ..., Saturday=6)",
     },
-    index: true
+    index: true,
   })
-  public day!: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+  public day!: number[];
 
   @prop({
     required: true,
     match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format (24-hour)"],
-    index: true
+    index: true,
   })
   public startTime!: string;
 
   @prop({
     required: true,
-    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format (24-hour)"]
+    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format (24-hour)"],
   })
   public endTime!: string;
 
   @prop({
     min: [1, "Duration must be at least 1 minute"],
-    max: [1440, "Duration cannot exceed 24 hours (1440 minutes)"]
+    max: [1440, "Duration cannot exceed 24 hours (1440 minutes)"],
   })
   public duration!: number;
 
   @prop({
     ref: "Station",
     required: true,
-    index: true
+    index: true,
   })
   public station!: Ref<Types.ObjectId>;
 
   @prop({
     default: true,
-    index: true
+    index: true,
   })
   public isActive!: boolean;
 
   @prop({
-    ref: "Media"
+    ref: "Media",
   })
   public image?: Ref<Types.ObjectId>;
 
@@ -147,21 +139,21 @@ export class Program {
 
   // Helper method to parse time string to minutes
   private parseTime(timeStr: string): number {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   }
 
   // Virtual to check if program is currently on air
   public get isOnAir(): boolean {
     const now = new Date();
-    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    if (currentDay === this.day) {
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+    if (this.day.includes(currentDay)) {
       const currentMinutes = this.parseTime(currentTime);
       const startMinutes = this.parseTime(this.startTime);
       const endMinutes = this.parseTime(this.endTime);
-      
+
       if (startMinutes <= endMinutes) {
         return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
       } else {
@@ -169,7 +161,7 @@ export class Program {
         return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
       }
     }
-    
+
     return false;
   }
 
@@ -182,7 +174,7 @@ export class Program {
   public get formattedDuration(): string {
     const hours = Math.floor(this.duration / 60);
     const minutes = this.duration % 60;
-    
+
     if (hours === 0) {
       return `${minutes} min`;
     } else if (minutes === 0) {
@@ -197,16 +189,29 @@ export class Program {
     return ProgramModel.find({ isActive: true });
   }
 
-  // Static method to find programs by day
-  public static findByDay(day: string) {
-    return ProgramModel.find({ day: day.toLowerCase(), isActive: true })
-      .sort({ startTime: 1 });
+  // Static method to find programs by day (accepts day number 0-6 or day name)
+  public static findByDay(dayInput: string | number) {
+    let dayNumber: number;
+
+    if (typeof dayInput === "string") {
+      const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      dayNumber = dayNames.indexOf(dayInput.toLowerCase());
+      if (dayNumber === -1) {
+        throw new Error("Invalid day name. Use sunday, monday, tuesday, wednesday, thursday, friday, or saturday");
+      }
+    } else {
+      dayNumber = dayInput;
+      if (dayNumber < 0 || dayNumber > 6) {
+        throw new Error("Day number must be between 0-6 (Sunday=0, Saturday=6)");
+      }
+    }
+
+    return ProgramModel.find({ day: dayNumber, isActive: true }).sort({ startTime: 1 });
   }
 
   // Static method to find programs by station
   public static findByStation(stationId: string | Types.ObjectId) {
-    return ProgramModel.find({ station: stationId, isActive: true })
-      .populate('station image');
+    return ProgramModel.find({ station: stationId, isActive: true }).populate("station image");
   }
 
   // Static method to find programs by time range
@@ -215,61 +220,69 @@ export class Program {
       $or: [
         { startTime: { $gte: startTime, $lte: endTime } },
         { endTime: { $gte: startTime, $lte: endTime } },
-        { startTime: { $lte: startTime }, endTime: { $gte: endTime } }
+        { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
       ],
-      isActive: true
+      isActive: true,
     });
   }
 
   // Static method to find currently airing programs
   public static findCurrentlyAiring() {
     const now = new Date();
-    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
     return ProgramModel.find({
       day: currentDay,
-      isActive: true
-    }).populate('station image');
+      isActive: true,
+    }).populate("station image");
   }
 
   // Static method to search programs
   public static search(query: string) {
     return ProgramModel.find({
-      $or: [
-        { name: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } }
-      ],
-      isActive: true
-    }).populate('station image');
+      $or: [{ name: { $regex: query, $options: "i" } }, { description: { $regex: query, $options: "i" } }],
+      isActive: true,
+    }).populate("station image");
   }
 
   // Static method to get schedule for a specific day and station
-  public static getSchedule(day: string, stationId?: string | Types.ObjectId) {
+  public static getSchedule(dayInput: string | number, stationId?: string | Types.ObjectId) {
+    let dayNumber: number;
+
+    if (typeof dayInput === "string") {
+      const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      dayNumber = dayNames.indexOf(dayInput.toLowerCase());
+      if (dayNumber === -1) {
+        throw new Error("Invalid day name. Use sunday, monday, tuesday, wednesday, thursday, friday, or saturday");
+      }
+    } else {
+      dayNumber = dayInput;
+      if (dayNumber < 0 || dayNumber > 6) {
+        throw new Error("Day number must be between 0-6 (Sunday=0, Saturday=6)");
+      }
+    }
+
     const filter: Record<string, unknown> = {
-      day: day.toLowerCase(),
-      isActive: true
+      day: dayNumber,
+      isActive: true,
     };
-    
+
     if (stationId) {
       filter.station = stationId;
     }
-    
-    return ProgramModel.find(filter)
-      .sort({ startTime: 1 })
-      .populate('station image');
+
+    return ProgramModel.find(filter).sort({ startTime: 1 }).populate("station image");
   }
 
   // Static method to get weekly schedule
   public static getWeeklySchedule(stationId?: string | Types.ObjectId) {
     const filter: Record<string, unknown> = { isActive: true };
-    
+
     if (stationId) {
       filter.station = stationId;
     }
-    
-    return ProgramModel.find(filter)
-      .sort({ day: 1, startTime: 1 })
-      .populate('station image');
+
+    return ProgramModel.find(filter).sort({ day: 1, startTime: 1 }).populate("station image");
   }
 
   // Static method to get program statistics
@@ -280,15 +293,17 @@ export class Program {
         $group: {
           _id: null,
           totalPrograms: { $sum: 1 },
-          avgDuration: { $avg: '$duration' }
-        }
-      }
+          avgDuration: { $avg: "$duration" },
+        },
+      },
     ]);
 
-    return stats[0] || {
-      totalPrograms: 0,
-      avgDuration: 0
-    };
+    return (
+      stats[0] || {
+        totalPrograms: 0,
+        avgDuration: 0,
+      }
+    );
   }
 
   // Static method to find programs with conflicts (overlapping times)
@@ -297,34 +312,37 @@ export class Program {
     if (stationId) {
       filter.station = stationId;
     }
-    
-    const programs = await ProgramModel.find(filter).sort({ day: 1, startTime: 1 });
+
+    const programs = await ProgramModel.find(filter).sort({ startTime: 1 });
     const conflicts: { program1: unknown; program2: unknown }[] = [];
-    
+
     // Helper function to parse time
     const parseTime = (timeStr: string): number => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
+      const [hours, minutes] = timeStr.split(":").map(Number);
       return hours * 60 + minutes;
     };
-    
+
     for (let i = 0; i < programs.length; i++) {
       for (let j = i + 1; j < programs.length; j++) {
         const prog1 = programs[i];
         const prog2 = programs[j];
-        
-        if (prog1.day === prog2.day && prog1.station?.toString() === prog2.station?.toString()) {
+
+        // Check if programs share any common days and same station
+        const hasCommonDay = prog1.day.some((day) => prog2.day.includes(day));
+
+        if (hasCommonDay && prog1.station?.toString() === prog2.station?.toString()) {
           const start1 = parseTime(prog1.startTime);
           const end1 = parseTime(prog1.endTime);
           const start2 = parseTime(prog2.startTime);
           const end2 = parseTime(prog2.endTime);
-          
+
           if ((start1 < end2 && end1 > start2) || (start2 < end1 && end2 > start1)) {
             conflicts.push({ program1: prog1, program2: prog2 });
           }
         }
       }
     }
-    
+
     return conflicts;
   }
 }

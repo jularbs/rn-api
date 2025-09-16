@@ -14,7 +14,6 @@ export interface ITag {
   name: string;
   slug: string;
   description?: string;
-  color?: string;
   usageCount: number;
   metaTitle?: string;
   metaDescription?: string;
@@ -71,13 +70,6 @@ export class Tag {
   public description?: string;
 
   @prop({
-    trim: true,
-    maxlength: [7, "Color must be a valid hex color code"],
-    match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Color must be a valid hex color code (e.g., #FF0000)"],
-  })
-  public color?: string;
-
-  @prop({
     default: 0,
     min: [0, "Usage count cannot be negative"],
     index: true
@@ -130,7 +122,7 @@ export class Tag {
   }
 
   // Static method to find by slug
-  public static findBySlugActive(slug: string) {
+  public static findBySlug(slug: string) {
     return TagModel.findOne({ slug });
   }
 

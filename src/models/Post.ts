@@ -1,13 +1,11 @@
-import { prop, getModelForClass, modelOptions, Severity, index, pre } from '@typegoose/typegoose';
-import { Types } from 'mongoose';
-import slugify from 'slugify';
+import { prop, getModelForClass, modelOptions, index, pre } from "@typegoose/typegoose";
+import { Types } from "mongoose";
+import slugify from "slugify";
 
 // Enum for post status
 export enum PostStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  ARCHIVED = 'archived',
-  SCHEDULED = 'scheduled'
+  DRAFT = "draft",
+  PUBLISHED = "published",
 }
 
 // Interface for Post
@@ -34,26 +32,31 @@ export interface IPost {
   updatedAt: Date;
 }
 
-@pre<Post>('save', function() {
-  if (this.isModified('title') || this.isNew) {
+@pre<Post>("save", function () {
+  if (this.isModified("title") || this.isNew) {
     this.slug = slugify(this.title, {
       lower: true,
       strict: true,
-      trim: true
+      trim: true,
     });
   }
-  
+
   // Set publishedAt when status changes to published
-  if (this.isModified('status') && this.status === PostStatus.PUBLISHED && !this.publishedAt) {
+  if (this.isModified("status") && this.status === PostStatus.PUBLISHED && !this.publishedAt) {
     this.publishedAt = new Date();
+  }
+
+  // Set scheduledAt to current date if it's empty
+  if (!this.scheduledAt) {
+    this.scheduledAt = new Date();
   }
 })
 @index({ slug: 1 }, { unique: true })
 @index({ title: 1 })
-@index({ author: 1 })
 @index({ category: 1 })
 @index({ tags: 1 })
 @index({ status: 1 })
+@index({ scheduledAt: 1 })
 @index({ publishedAt: -1 })
 @index({ viewCount: -1 })
 @index({ isBreaking: 1 })
@@ -62,11 +65,10 @@ export interface IPost {
 @modelOptions({
   schemaOptions: {
     timestamps: true,
-    collection: 'posts'
+    id: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
-  options: {
-    allowMixed: Severity.ALLOW
-  }
 })
 export class Post implements IPost {
   public _id!: Types.ObjectId;
@@ -83,19 +85,19 @@ export class Post implements IPost {
   @prop({ required: true })
   public content!: string;
 
-  @prop({ required: true, ref: 'User' })
+  @prop({ required: true, ref: "User" })
   public author!: Types.ObjectId;
 
-  @prop({ ref: 'Category' })
+  @prop({ ref: "Category" })
   public category?: Types.ObjectId;
 
-  @prop({ ref: 'Tag', type: () => [Types.ObjectId], default: [] })
+  @prop({ ref: "Tag", type: () => [Types.ObjectId], default: [] })
   public tags!: Types.ObjectId[];
 
-  @prop({ ref: 'Media' })
+  @prop({ ref: "Media" })
   public featuredImage?: Types.ObjectId;
 
-  @prop({ ref: 'Media' })
+  @prop({ ref: "Media" })
   public thumbnailImage?: Types.ObjectId;
 
   @prop({ enum: PostStatus, default: PostStatus.DRAFT })
@@ -116,34 +118,27 @@ export class Post implements IPost {
   @prop({ default: false })
   public isFeatured!: boolean;
 
-  @prop({ trim: true, maxlength: 100 })
+  @prop({ trim: true, maxlength: 300 })
   public metaTitle?: string;
 
-  @prop({ trim: true, maxlength: 300 })
+  @prop({ trim: true, maxlength: 500 })
   public metaDescription?: string;
 
-  @prop({ default: Date.now })
   public createdAt!: Date;
-
-  @prop({ default: Date.now })
   public updatedAt!: Date;
 
   // Instance method to increment view count
   public async incrementViews() {
-    return await PostModel.findByIdAndUpdate(
-      this._id,
-      { $inc: { viewCount: 1 } },
-      { new: true }
-    );
+    return await PostModel.findByIdAndUpdate(this._id, { $inc: { viewCount: 1 } }, { new: true });
   }
 
   // Instance method to publish post
   public async publish() {
     return await PostModel.findByIdAndUpdate(
       this._id,
-      { 
+      {
         status: PostStatus.PUBLISHED,
-        publishedAt: new Date()
+        publishedAt: new Date(),
       },
       { new: true }
     );
@@ -151,107 +146,108 @@ export class Post implements IPost {
 
   // Static method to get published posts
   public static getPublishedPosts(limit = 10, skip = 0) {
-    return PostModel.find({ 
+    return PostModel.find({
       status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
       .skip(skip)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get featured posts
   public static getFeaturedPosts(limit = 5) {
-    return PostModel.find({ 
+    return PostModel.find({
       status: PostStatus.PUBLISHED,
       isFeatured: true,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get breaking news
   public static getBreakingNews(limit = 3) {
-    return PostModel.find({ 
+    return PostModel.find({
       status: PostStatus.PUBLISHED,
       isBreaking: true,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get posts by category
   public static getByCategory(categoryId: string | Types.ObjectId, limit = 10, skip = 0) {
-    const id = typeof categoryId === 'string' ? new Types.ObjectId(categoryId) : categoryId;
-    return PostModel.find({ 
+    const id = typeof categoryId === "string" ? new Types.ObjectId(categoryId) : categoryId;
+    return PostModel.find({
       category: id,
       status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
       .skip(skip)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get posts by author
   public static getByAuthor(authorId: string | Types.ObjectId, limit = 10, skip = 0) {
-    const id = typeof authorId === 'string' ? new Types.ObjectId(authorId) : authorId;
-    return PostModel.find({ 
+    const id = typeof authorId === "string" ? new Types.ObjectId(authorId) : authorId;
+    return PostModel.find({
       author: id,
       status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
       .skip(skip)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to search posts
   public static searchPosts(query: string, limit = 10, skip = 0) {
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query, "i");
     return PostModel.find({
-      $or: [
-        { title: searchRegex },
-        { excerpt: searchRegex },
-        { content: searchRegex }
-      ],
+      $or: [{ title: searchRegex }, { excerpt: searchRegex }, { content: searchRegex }],
       status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     })
       .sort({ publishedAt: -1 })
       .limit(limit)
       .skip(skip)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get most viewed posts
   public static getMostViewed(limit = 10, days = 30) {
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - days);
-    
-    return PostModel.find({ 
+
+    return PostModel.find({
       status: PostStatus.PUBLISHED,
-      publishedAt: { $gte: dateLimit, $lte: new Date() }
+      publishedAt: { $gte: dateLimit, $lte: new Date() },
     })
       .sort({ viewCount: -1 })
       .limit(limit)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get related posts
-  public static getRelatedPosts(postId: string | Types.ObjectId, categoryId?: Types.ObjectId, tagIds?: Types.ObjectId[], limit = 5) {
-    const id = typeof postId === 'string' ? new Types.ObjectId(postId) : postId;
+  public static getRelatedPosts(
+    postId: string | Types.ObjectId,
+    categoryId?: Types.ObjectId,
+    tagIds?: Types.ObjectId[],
+    limit = 5
+  ) {
+    const id = typeof postId === "string" ? new Types.ObjectId(postId) : postId;
     const filter: Record<string, unknown> = {
       _id: { $ne: id },
       status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() }
+      publishedAt: { $lte: new Date() },
     };
 
     if (categoryId) {
@@ -263,17 +259,17 @@ export class Post implements IPost {
     return PostModel.find(filter)
       .sort({ publishedAt: -1 })
       .limit(limit)
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get scheduled posts
   public static getScheduledPosts() {
-    return PostModel.find({ 
-      status: PostStatus.SCHEDULED,
-      scheduledAt: { $lte: new Date() }
+    return PostModel.find({
+      status: PostStatus.PUBLISHED,
+      scheduledAt: { $lte: new Date() },
     })
       .sort({ scheduledAt: 1 })
-      .populate('author category tags featuredImage thumbnailImage');
+      .populate("author category tags featuredImage thumbnailImage");
   }
 
   // Static method to get post statistics
@@ -281,11 +277,11 @@ export class Post implements IPost {
     const stats = await PostModel.aggregate([
       {
         $group: {
-          _id: '$status',
+          _id: "$status",
           count: { $sum: 1 },
-          totalViews: { $sum: '$viewCount' }
-        }
-      }
+          totalViews: { $sum: "$viewCount" },
+        },
+      },
     ]);
 
     const totalStats = await PostModel.aggregate([
@@ -293,11 +289,11 @@ export class Post implements IPost {
         $group: {
           _id: null,
           totalPosts: { $sum: 1 },
-          totalViews: { $sum: '$viewCount' },
-          breakingNews: { $sum: { $cond: ['$isBreaking', 1, 0] } },
-          featuredPosts: { $sum: { $cond: ['$isFeatured', 1, 0] } }
-        }
-      }
+          totalViews: { $sum: "$viewCount" },
+          breakingNews: { $sum: { $cond: ["$isBreaking", 1, 0] } },
+          featuredPosts: { $sum: { $cond: ["$isFeatured", 1, 0] } },
+        },
+      },
     ]);
 
     return {
@@ -306,8 +302,8 @@ export class Post implements IPost {
         totalPosts: 0,
         totalViews: 0,
         breakingNews: 0,
-        featuredPosts: 0
-      }
+        featuredPosts: 0,
+      },
     };
   }
 
@@ -315,27 +311,27 @@ export class Post implements IPost {
   public static getTrendingPosts(limit = 10, days = 7) {
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - days);
-    
+
     return PostModel.aggregate([
       {
         $match: {
           status: PostStatus.PUBLISHED,
-          publishedAt: { $gte: dateLimit, $lte: new Date() }
-        }
+          publishedAt: { $gte: dateLimit, $lte: new Date() },
+        },
       },
       {
         $addFields: {
           trendingScore: {
             $add: [
-              { $multiply: ['$viewCount', 1] },
-              { $cond: ['$isFeatured', 10, 0] },
-              { $cond: ['$isBreaking', 15, 0] }
-            ]
-          }
-        }
+              { $multiply: ["$viewCount", 1] },
+              { $cond: ["$isFeatured", 10, 0] },
+              { $cond: ["$isBreaking", 15, 0] },
+            ],
+          },
+        },
       },
       { $sort: { trendingScore: -1 } },
-      { $limit: limit }
+      { $limit: limit },
     ]);
   }
 }

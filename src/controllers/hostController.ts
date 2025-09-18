@@ -1,19 +1,17 @@
 import { Request, Response } from "express";
 import { HostModel } from "../models/Host";
 import { Types } from "mongoose";
+import slugify from "slugify";
+import formidable from "formidable";
+import fs from "fs";
+import s3Helper from "@/utils/s3Helper";
+import { MediaModel } from "@/models/Media";
+const { firstValues } = require("formidable/src/helpers/firstValues.js");
 
 // GET /api/hosts - Get all hosts with filtering and pagination
 export const getAllHosts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      page = "1",
-      limit = "10",
-      search,
-      sortBy = "name",
-      sortOrder = "asc",
-      isActive,
-      withPrograms,
-    } = req.query;
+    const { page = "1", limit = "10", search, sortBy = "name", sortOrder = "asc", isActive } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -23,20 +21,9 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
       filter.isActive = isActive === "true";
     }
 
-    // Filter by hosts with programs
-    if (withPrograms === "true") {
-      filter.programs = { $exists: true, $not: { $size: 0 } };
-    } else if (withPrograms === "false") {
-      filter.programs = { $size: 0 };
-    }
-
     // Search functionality
     if (search && typeof search === "string") {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { bio: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-      ];
+      filter.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
     }
 
     // Pagination
@@ -55,7 +42,7 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum)
-      .populate("image", "filename url")
+      .populate("image", "key bucket mimeType")
       .populate("programs", "title slug");
 
     // Get total count for pagination
@@ -103,7 +90,7 @@ export const getHostById = async (req: Request, res: Response): Promise<void> =>
     }
 
     const host = await HostModel.findById(id)
-      .populate("image", "filename url")
+      .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
     if (!host) {
@@ -117,7 +104,7 @@ export const getHostById = async (req: Request, res: Response): Promise<void> =>
     res.json({
       success: true,
       message: "Host retrieved successfully",
-      data: { host },
+      data: host,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -135,11 +122,11 @@ export const getHostBySlug = async (req: Request, res: Response): Promise<void> 
   try {
     const { slug } = req.params;
 
-    const host = await HostModel.findOne({ 
+    const host = await HostModel.findOne({
       slug: slug.toLowerCase(),
-      isActive: true 
+      isActive: true,
     })
-      .populate("image", "filename url")
+      .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
     if (!host) {
@@ -153,7 +140,7 @@ export const getHostBySlug = async (req: Request, res: Response): Promise<void> 
     res.json({
       success: true,
       message: "Host retrieved successfully",
-      data: { host },
+      data: host,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -169,16 +156,19 @@ export const getHostBySlug = async (req: Request, res: Response): Promise<void> 
 // POST /api/hosts - Create new host
 export const createHost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      name,
-      slug,
-      bio,
-      email,
-      image,
-      socialLinks,
-      isActive = true,
-      programs = [],
-    } = req.body;
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      filter: ({ mimetype }) => {
+        // Accept only image files
+        return mimetype?.startsWith("image/") || false;
+      },
+    });
+
+    const [fields, files] = await form.parse(req);
+
+    const formData = firstValues(form, fields, ["programs"]);
+
+    const { name, slug, bio, email, socialLinks, isActive = true, programs = [] } = formData;
 
     // Validate required fields
     if (!name) {
@@ -192,10 +182,11 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     // Generate slug if not provided
     let finalSlug = slug;
     if (!finalSlug) {
-      finalSlug = name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .trim();
+      finalSlug = slugify(name, {
+        lower: true,
+        strict: true,
+        remove: /[*+~.()'"!:@]/g,
+      });
     }
 
     // Check if slug already exists
@@ -219,13 +210,45 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Validate image ID if provided
-    if (image && !Types.ObjectId.isValid(image)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid image ID format",
-      });
-      return;
+    let imageId: Types.ObjectId | undefined;
+
+    const image = files.image;
+    if (image) {
+      try {
+        const file = Array.isArray(image) ? image[0] : image;
+        const fileBuffer = await fs.promises.readFile(file.filepath);
+
+        const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
+          folder: "hosts",
+          quality: 80,
+          maxWidth: 600,
+          maxHeight: 600,
+        });
+
+        const mediaData = {
+          originalName: file.originalFilename || "logo.jpg",
+          key: uploadResult.key,
+          bucket: uploadResult.bucket,
+          url: uploadResult.url,
+          mimeType: uploadResult.mimeType,
+          size: uploadResult.size || file.size,
+        };
+
+        const media = new MediaModel(mediaData);
+        await media.save();
+        imageId = media._id;
+
+        // Clean up temporary file
+        await fs.promises.unlink(file.filepath);
+      } catch (uploadError) {
+        console.error("Logo upload error:", uploadError);
+        res.status(500).json({
+          success: false,
+          message: "Failed to upload logo image",
+          error: uploadError instanceof Error ? uploadError.message : "Unknown error",
+        });
+        return;
+      }
     }
 
     // Validate program IDs if provided
@@ -247,7 +270,7 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
       slug: finalSlug.toLowerCase().trim(),
       bio: bio?.trim(),
       email: email?.toLowerCase().trim(),
-      image: image || undefined,
+      image: imageId || undefined,
       socialLinks: socialLinks || undefined,
       isActive,
       programs: programs || [],
@@ -257,12 +280,19 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     await host.save();
 
     // Populate references before returning
-    await host.populate("image programs");
+    await host.populate({
+      path: "image",
+      select: "key bucket mimeType",
+    });
+    await host.populate({
+      path: "programs",
+      select: "slug title",
+    });
 
     res.status(201).json({
       success: true,
       message: "Host created successfully",
-      data: { host },
+      data: host,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -272,9 +302,7 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -300,11 +328,23 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+//TODO: convert request to formData
 // PUT /api/hosts/:id - Update host by ID
 export const updateHost = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      filter: ({ mimetype }) => {
+        // Accept only image files
+        return mimetype?.startsWith("image/") || false;
+      },
+    });
+
+    const [fields, files] = await form.parse(req);
+
+    const updateData = firstValues(form, fields, ["programs"]);
 
     // Validate ObjectId
     if (!Types.ObjectId.isValid(id)) {
@@ -350,13 +390,45 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Validate image ID if provided
-    if (updateData.image && !Types.ObjectId.isValid(updateData.image)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid image ID format",
-      });
-      return;
+    let imageId: Types.ObjectId | undefined;
+
+    const image = files.image;
+    if (image) {
+      try {
+        const file = Array.isArray(image) ? image[0] : image;
+        const fileBuffer = await fs.promises.readFile(file.filepath);
+
+        const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
+          folder: "hosts",
+          quality: 80,
+          maxWidth: 600,
+          maxHeight: 600,
+        });
+
+        const mediaData = {
+          originalName: file.originalFilename || "logo.jpg",
+          key: uploadResult.key,
+          bucket: uploadResult.bucket,
+          url: uploadResult.url,
+          mimeType: uploadResult.mimeType,
+          size: uploadResult.size || file.size,
+        };
+
+        const media = new MediaModel(mediaData);
+        await media.save();
+        imageId = media._id;
+
+        // Clean up temporary file
+        await fs.promises.unlink(file.filepath);
+      } catch (uploadError) {
+        console.error("Logo upload error:", uploadError);
+        res.status(500).json({
+          success: false,
+          message: "Failed to upload logo image",
+          error: uploadError instanceof Error ? uploadError.message : "Unknown error",
+        });
+        return;
+      }
     }
 
     // Validate program IDs if provided
@@ -379,25 +451,27 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
     if (updateData.slug !== undefined) sanitizedUpdateData.slug = updateData.slug?.toLowerCase().trim();
     if (updateData.bio !== undefined) sanitizedUpdateData.bio = updateData.bio?.trim();
     if (updateData.email !== undefined) sanitizedUpdateData.email = updateData.email?.toLowerCase().trim();
-    if (updateData.image !== undefined) sanitizedUpdateData.image = updateData.image;
+    if (imageId) {
+      sanitizedUpdateData.image = imageId;
+    } else {
+      sanitizedUpdateData.image = updateData.image;
+    }
     if (updateData.socialLinks !== undefined) sanitizedUpdateData.socialLinks = updateData.socialLinks;
     if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
     if (updateData.programs !== undefined) sanitizedUpdateData.programs = updateData.programs;
 
     // Update host
-    const updatedHost = await HostModel.findByIdAndUpdate(
-      id,
-      sanitizedUpdateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate("image programs");
+    const updatedHost = await HostModel.findByIdAndUpdate(id, sanitizedUpdateData, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("image", "key bucket mimeType")
+      .populate("programs", "slug title");
 
     res.json({
       success: true,
       message: "Host updated successfully",
-      data: { host: updatedHost },
+      data: updatedHost,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -407,9 +481,7 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -465,7 +537,7 @@ export const deleteHost = async (req: Request, res: Response): Promise<void> => 
     res.json({
       success: true,
       message: "Host deleted successfully",
-      data: { host: deletedHost },
+      data: deletedHost,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -505,16 +577,14 @@ export const toggleHostStatus = async (req: Request, res: Response): Promise<voi
     // Toggle status
     const newStatus = !host.isActive;
 
-    const updatedHost = await HostModel.findByIdAndUpdate(
-      id,
-      { isActive: newStatus },
-      { new: true }
-    ).populate("image programs");
+    const updatedHost = await HostModel.findByIdAndUpdate(id, { isActive: newStatus }, { new: true })
+      .populate("image", "key bucket mimeType")
+      .populate("programs", "slug title");
 
     res.json({
       success: true,
       message: `Host ${newStatus ? "activated" : "deactivated"} successfully`,
-      data: { host: updatedHost },
+      data: updatedHost,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -565,7 +635,7 @@ export const addProgramToHost = async (req: Request, res: Response): Promise<voi
     res.json({
       success: true,
       message: "Program added to host successfully",
-      data: { host: updatedHost },
+      data: updatedHost,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -616,7 +686,7 @@ export const removeProgramFromHost = async (req: Request, res: Response): Promis
     res.json({
       success: true,
       message: "Program removed from host successfully",
-      data: { host: updatedHost },
+      data: updatedHost,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -647,7 +717,7 @@ export const searchHosts = async (req: Request, res: Response): Promise<void> =>
     res.json({
       success: true,
       message: "Host search completed successfully",
-      data: { hosts },
+      data: hosts,
     });
   } catch (error: unknown) {
     const err = error as Error;

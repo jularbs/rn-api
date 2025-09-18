@@ -72,48 +72,9 @@ export class Options {
     return OptionsModel.find({ key: { $in: keys } }).populate("updatedBy media");
   }
 
-  // Static method to get all options
-  public static getAllOptions() {
-    return OptionsModel.find({}).sort({ key: 1 }).populate("updatedBy media");
-  }
-
   // Static method to delete option by key
   public static deleteByKey(key: string) {
     return OptionsModel.findOneAndDelete({ key });
-  }
-
-  // Static method to search options
-  public static searchOptions(query: string) {
-    const searchRegex = new RegExp(query, "i");
-    return OptionsModel.find({
-      $or: [{ key: searchRegex }, { value: searchRegex }],
-    }).populate("updatedBy media");
-  }
-  
-  // Static method to bulk update options
-  public static async bulkUpdateOptions(
-    updates: Array<{ key: string; value: string; updatedBy: string | Types.ObjectId; media?: string | Types.ObjectId }>
-  ) {
-    const bulkOps = updates.map((update) => ({
-      updateOne: {
-        filter: { key: update.key },
-        update: {
-          $set: {
-            value: update.value,
-            updatedBy: typeof update.updatedBy === "string" ? new Types.ObjectId(update.updatedBy) : update.updatedBy,
-            media: update.media
-              ? typeof update.media === "string"
-                ? new Types.ObjectId(update.media)
-                : update.media
-              : undefined,
-            updatedAt: new Date(),
-          },
-        },
-        upsert: true,
-      },
-    }));
-
-    return OptionsModel.bulkWrite(bulkOps);
   }
 }
 

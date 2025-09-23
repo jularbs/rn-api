@@ -47,7 +47,6 @@ export interface IProgram {
   }
 })
 @index({ name: 1 })
-@index({ slug: 1 })
 @index({ day: 1 })
 @index({ startTime: 1 })
 @index({ station: 1 })

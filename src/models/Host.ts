@@ -31,7 +31,6 @@ export interface IHost {
     });
   }
 })
-@index({ slug: 1 }, { unique: true })
 @index({ name: 1 })
 @index({ isActive: 1 })
 @index({ programs: 1 })

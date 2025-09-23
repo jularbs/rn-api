@@ -12,7 +12,6 @@ export interface IOptions {
   updatedAt: Date;
 }
 
-@index({ key: 1 }, { unique: true })
 @index({ updatedBy: 1 })
 @index({ createdAt: -1 })
 @modelOptions({

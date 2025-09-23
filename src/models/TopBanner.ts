@@ -35,7 +35,6 @@ export interface ITopBanner {
     });
   }
 })
-@index({ slug: 1 }, { unique: true })
 @index({ name: 1 })
 @index({ visibility: 1 })
 @index({ startDate: 1 })

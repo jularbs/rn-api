@@ -51,7 +51,6 @@ export interface IPost {
     this.scheduledAt = new Date();
   }
 })
-@index({ slug: 1 }, { unique: true })
 @index({ title: 1 })
 @index({ category: 1 })
 @index({ tags: 1 })

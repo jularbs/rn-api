@@ -1,3 +1,4 @@
+//TODOS: Handle ScheduledAt
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { PostModel, PostStatus } from '../models/Post';
@@ -24,7 +25,7 @@ export const getPosts = async (req: Request<{}, PostListResponse, {}, PostQueryP
       search,
       featured,
       breaking,
-      sortBy = 'createdAt',
+      sortBy = 'scheduledAt',
       sortOrder = 'desc',
       startDate,
       endDate
@@ -100,11 +101,11 @@ export const getPosts = async (req: Request<{}, PostListResponse, {}, PostQueryP
         .sort(sort)
         .skip(skip)
         .limit(limitNum)
-        .populate('author', 'name email avatar')
-        .populate('category', 'name slug description')
-        .populate('tags', 'name slug description')
-        .populate('featuredImage', 'originalName fileName mimeType size url')
-        .populate('thumbnailImage', 'originalName fileName mimeType size url'),
+        .populate('author', 'name email')
+        .populate('category', 'name slug')
+        .populate('tags', 'name slug')
+        .populate('featuredImage', 'key bucket mimeType')
+        .populate('thumbnailImage', 'key bucket mimeType'),
       PostModel.countDocuments(filter)
     ]);
 
@@ -164,8 +165,8 @@ export const getPost = async (req: Request, res: Response): Promise<void> => {
     await post.populate('author', 'name email avatar');
     await post.populate('category', 'name slug description');
     await post.populate('tags', 'name slug description');
-    await post.populate('featuredImage', 'originalName fileName mimeType size url');
-    await post.populate('thumbnailImage', 'originalName fileName mimeType size url');
+    await post.populate('featuredImage', 'key bucket mimeType');
+    await post.populate('thumbnailImage', 'key bucket mimeType');
 
     res.json(post);
   } catch (error) {
@@ -230,19 +231,6 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
     if (tags.length !== validTagIds.length) {
       res.status(400).json({ error: 'Invalid tag IDs provided' });
       return;
-    }
-
-    // Validate scheduled date
-    if (status === PostStatus.SCHEDULED) {
-      if (!scheduledAt) {
-        res.status(400).json({ error: 'Scheduled date is required for scheduled posts' });
-        return;
-      }
-      const scheduledDate = new Date(scheduledAt);
-      if (scheduledDate <= new Date()) {
-        res.status(400).json({ error: 'Scheduled date must be in the future' });
-        return;
-      }
     }
 
     const postData = {
@@ -343,19 +331,6 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
       const validTagIds = updateData.tags.filter(tag => Types.ObjectId.isValid(tag));
       if (updateData.tags.length !== validTagIds.length) {
         res.status(400).json({ error: 'Invalid tag IDs provided' });
-        return;
-      }
-    }
-
-    // Validate scheduled date
-    if (updateData.status === PostStatus.SCHEDULED) {
-      if (!updateData.scheduledAt) {
-        res.status(400).json({ error: 'Scheduled date is required for scheduled posts' });
-        return;
-      }
-      const scheduledDate = new Date(updateData.scheduledAt);
-      if (scheduledDate <= new Date()) {
-        res.status(400).json({ error: 'Scheduled date must be in the future' });
         return;
       }
     }

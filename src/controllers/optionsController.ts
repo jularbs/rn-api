@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { OptionsModel } from "../models/Options";
+import { OptionsModel } from "@/models/Options";
 import { Types } from "mongoose";
 import formidable from "formidable";
 const { firstValues } = require("formidable/src/helpers/firstValues.js");

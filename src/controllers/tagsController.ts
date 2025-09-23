@@ -1,6 +1,6 @@
 //TODOS: Code Review on all functions
 import { Request, Response } from "express";
-import { TagModel } from "../models/Tag";
+import { TagModel } from "@/models/Tag";
 import { Types } from "mongoose";
 
 // GET /api/tags - Get all tags with filtering and pagination

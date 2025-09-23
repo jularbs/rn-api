@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { PostStatus } from '../models/Post';
+import { PostStatus } from '@/models/Post';
 
 // Request types
 export interface CreatePostRequest {

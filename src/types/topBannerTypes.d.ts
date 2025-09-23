@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { BannerVisibility } from "../models/TopBanner";
+import { BannerVisibility } from "@/models/TopBanner";
 
 // Request types for creating/updating top banners
 export interface CreateTopBannerRequest {
@@ -102,7 +102,7 @@ export interface TopPerformingBanner extends TopBannerResponse {
 }
 
 // Visibility states
-export { BannerVisibility } from "../models/TopBanner";
+export { BannerVisibility } from "@/models/TopBanner";
 
 // Common banner positions/types for reference
 export interface BannerPositions {

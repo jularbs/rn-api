@@ -8,8 +8,8 @@ import {
   deleteCategory,
   toggleCategoryStatus,
   reorderCategories,
-} from "../controllers/categoriesController";
-import { authenticate, authorize, optionalAuth } from "../middleware/auth";
+} from "@/controllers/categoriesController";
+import { authenticate, authorize, optionalAuth } from "@/middleware/auth";
 
 const router = Router();
 

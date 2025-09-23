@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { TopBannerModel, BannerVisibility } from "../models/TopBanner";
+import { TopBannerModel, BannerVisibility } from "@/models/TopBanner";
 import { Types } from "mongoose";
 
 // GET /api/top-banners - Get all top banners with filtering and pagination

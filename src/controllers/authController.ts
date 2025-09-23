@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { createHash } from "crypto";
-import { UserModel } from "../models/User";
-import { generateToken } from "../middleware/auth";
+import { UserModel } from "@/models/User";
+import { generateToken } from "@/middleware/auth";
 import {
   RegisterRequest,
   LoginRequest,
   RequestPasswordResetRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
-} from "../types/authTypes";
+} from "@/types/authTypes";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {

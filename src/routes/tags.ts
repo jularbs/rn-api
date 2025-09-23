@@ -14,8 +14,8 @@ import {
   decrementTagUsage,
   bulkUpdateTagUsage,
   cleanupUnusedTags,
-} from "../controllers/tagsController";
-import { authenticate, authorize } from "../middleware/auth";
+} from "@/controllers/tagsController";
+import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 

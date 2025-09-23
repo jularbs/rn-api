@@ -1,7 +1,7 @@
 import express from "express";
-import { authenticate } from "../middleware/auth";
-import { createRateLimiter } from "../middleware";
-import { register, login, logout, requestPasswordReset, resetPassword, changePassword, verifyEmail, resendEmailVerification } from "../controllers/authController";
+import { authenticate } from "@/middleware/auth";
+import { createRateLimiter } from "@/middleware";
+import { register, login, logout, requestPasswordReset, resetPassword, changePassword, verifyEmail, resendEmailVerification } from "@/controllers/authController";
 
 const router = express.Router();
 

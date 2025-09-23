@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { UserModel } from '../models/User';
+import { UserModel } from '@/models/User';
 
 // POST /api/users - Create new user
 export const createUser = async (req: Request, res: Response): Promise<void> => {

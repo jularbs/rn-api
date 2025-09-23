@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { HostModel } from "../models/Host";
+import { HostModel } from "@/models/Host";
 import { Types } from "mongoose";
 import slugify from "slugify";
 import formidable from "formidable";

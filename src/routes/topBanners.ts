@@ -11,8 +11,8 @@ import {
   incrementClicks,
   incrementImpressions,
   searchBanners,
-} from "../controllers/topBannerController";
-import { authenticate, authorize } from "../middleware/auth";
+} from "@/controllers/topBannerController";
+import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize } from '@/middleware/auth';
 import {
   getPosts,
   getPost,
@@ -19,7 +19,7 @@ import {
   getTrendingPosts,
   getPostStats,
   getScheduledPosts
-} from '../controllers/postsController';
+} from '@/controllers/postsController';
 
 const router = Router();
 

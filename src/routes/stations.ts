@@ -1,7 +1,7 @@
 //TODOS: test error with url http://localhost:8000/api/v1/station/radio-station-two/slug
 import { Router } from "express";
-import { getAllStations, getStationById, getStationBySlug, createStation, updateStation, deleteStation, toggleStationStatus } from "../controllers/stationsController";
-import { authenticate, authorize } from "../middleware/auth";
+import { getAllStations, getStationById, getStationBySlug, createStation, updateStation, deleteStation, toggleStationStatus } from "@/controllers/stationsController";
+import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 

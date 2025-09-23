@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { MediaModel } from "../models/Media";
+import { MediaModel } from "@/models/Media";
 import { Types } from "mongoose";
 
 // GET /api/media - Get all media files with filtering and pagination

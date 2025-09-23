@@ -10,8 +10,8 @@ import {
   addProgramToHost,
   removeProgramFromHost,
   searchHosts,
-} from "../controllers/hostController";
-import { authenticate, authorize } from "../middleware/auth";
+} from "@/controllers/hostController";
+import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 

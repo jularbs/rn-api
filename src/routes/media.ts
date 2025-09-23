@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { authenticate, authorize } from "../middleware/auth";
+import { authenticate, authorize } from "@/middleware/auth";
 import {
   getAllMedia,
   getMediaByKey,
   deleteMedia,
   getMediaByType,
-} from "../controllers/mediaController";
+} from "@/controllers/mediaController";
 
 const router = Router();
 

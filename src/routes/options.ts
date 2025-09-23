@@ -3,8 +3,8 @@ import {
   getOptionByKey,
   createOrUpdateOption,
   deleteOption,
-} from "../controllers/optionsController";
-import { authenticate, authorize } from "../middleware/auth";
+} from "@/controllers/optionsController";
+import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 

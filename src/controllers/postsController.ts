@@ -1,7 +1,7 @@
 //TODOS: Handle ScheduledAt
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import { PostModel, PostStatus } from '../models/Post';
+import { PostModel, PostStatus } from '@/models/Post';
 import { 
   CreatePostRequest, 
   UpdatePostRequest, 
@@ -10,7 +10,7 @@ import {
   RelatedPostsQueryParams,
   PostListResponse,
   PostStatsResponse
-} from '../types/postTypes';
+} from '@/types/postTypes';
 
 // Get all posts with advanced filtering and pagination
 export const getPosts = async (req: Request<{}, PostListResponse, {}, PostQueryParams>, res: Response): Promise<void> => {

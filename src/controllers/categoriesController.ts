@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CategoryModel } from "../models/Category";
+import { CategoryModel } from "@/models/Category";
 import { Types } from "mongoose";
 import slugify from "slugify";
 

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { StationModel } from "../models/Station";
-import { MediaModel } from "../models/Media";
-import { s3Helper } from "../utils/s3Helper";
+import { StationModel } from "@/models/Station";
+import { MediaModel } from "@/models/Media";
+import { s3Helper } from "@/utils/s3Helper";
 import { Types } from "mongoose";
 import formidable from "formidable";
 import fs from "fs";

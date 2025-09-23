@@ -31,7 +31,7 @@ import { AppInfo, HealthCheckResponse } from "./types";
 process.setMaxListeners(15);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 // Connect to MongoDB
 connectDB();
@@ -65,15 +65,15 @@ app.get("/api/health", (req: Request, res: Response) => {
 });
 
 // API Routes
-app.use("/api", authRoutes);
-app.use("/api", usersRoutes);
-app.use("/api", stationRoutes);
-app.use("/api", categoriesRoutes);
-app.use("/api/tags", tagsRoutes);
-app.use("/api/options", optionsRoutes);
-app.use("/api/top-banners", topBannerRoutes);
-app.use("/api/hosts", hostRoutes);
-app.use("/api/media", mediaRoutes);
+app.use("/", authRoutes);
+app.use("/", usersRoutes);
+app.use("/", stationRoutes);
+app.use("/", categoriesRoutes);
+app.use("/", tagsRoutes);
+app.use("/", optionsRoutes);
+app.use("/", topBannerRoutes);
+app.use("/", hostRoutes);
+app.use("/", mediaRoutes);
 app.use("/api/posts", postsRoutes);
 
 // 404 handler

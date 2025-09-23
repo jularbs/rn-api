@@ -1,4 +1,4 @@
-import { prop, getModelForClass, modelOptions, index, pre } from '@typegoose/typegoose';
+import { prop, getModelForClass, modelOptions, index, pre, Severity } from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 import slugify from 'slugify';
 
@@ -40,7 +40,11 @@ export interface IHost {
     id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    
   },
+  options: {
+    allowMixed: Severity.ALLOW
+  }
 })
 export class Host {
   public _id!: Types.ObjectId;
@@ -60,7 +64,7 @@ export class Host {
   @prop({ ref: "Media" })
   public image?: Types.ObjectId;
 
-  @prop({ type: () => Object })
+  @prop({ type: () => Object, allowMixed: Severity.ALLOW })
   public socialLinks?: {
     facebook?: string;
     twitter?: string;

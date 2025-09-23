@@ -20,50 +20,50 @@ import { authenticate, authorize } from "@/middleware/auth";
 const router = Router();
 
 // Public routes - No authentication required
-// GET /api/tags - Get all tags with filtering and pagination
-router.get("/", getAllTags);
+// GET /v1/tags - Get all tags with filtering and pagination
+router.get("/v1/tags", getAllTags);
 
-// GET /api/tags/popular - Get popular tags
-router.get("/popular", getPopularTags);
+// GET /v1/tags/popular - Get popular tags
+router.get("/v1/tags/popular", getPopularTags);
 
-// GET /api/tags/trending - Get trending tags
-router.get("/trending", getTrendingTags);
+// GET /v1/tags/trending - Get trending tags
+router.get("/v1/tags/trending", getTrendingTags);
 
-// GET /api/tags/slug/:slug - Get tag by slug
-router.get("/slug/:slug", getTagBySlug);
+// GET /v1/tags/slug/:slug - Get tag by slug
+router.get("/v1/tags/slug/:slug", getTagBySlug);
 
-// GET /api/tags/:id - Get tag by ID
-router.get("/:id", getTagById);
+// GET /v1/tags/:id - Get tag by ID
+router.get("/v1/tags/:id", getTagById);
 
 // Protected routes - Require authentication
 // Admin/Moderator only routes
-// POST /api/tags - Create new tag
-router.post("/", authenticate, authorize("admin", "moderator"), createTag);
+// POST /v1/tags - Create new tag
+router.post("/v1/tags/", authenticate, authorize("admin", "moderator"), createTag);
 
-// POST /api/tags/batch - Create multiple tags
-router.post("/batch", authenticate, authorize("admin", "moderator"), createTagsBatch);
+// POST /v1/tags/batch - Create multiple tags
+router.post("/v1/tags/batch", authenticate, authorize("admin", "moderator"), createTagsBatch);
 
-// PUT /api/tags/:id - Update tag by ID
-router.put("/:id", authenticate, authorize("admin", "moderator"), updateTag);
+// PUT /v1/tags/:id - Update tag by ID
+router.put("/v1/tags/:id", authenticate, authorize("admin", "moderator"), updateTag);
 
-// DELETE /api/tags/:id - Delete tag by ID
-router.delete("/:id", authenticate, authorize("admin"), deleteTag);
+// DELETE /v1/tags/:id - Delete tag by ID
+router.delete("/v1/tags/:id", authenticate, authorize("admin"), deleteTag);
 
 // Analytics and statistics routes (admin only)
-// GET /api/tags/stats - Get tag statistics
-router.get("/stats", authenticate, authorize("admin"), getTagStats);
+// GET /v1/tags/stats - Get tag statistics
+router.get("/v1/tags/stats", authenticate, authorize("admin"), getTagStats);
 
-// DELETE /api/tags/cleanup-unused - Cleanup unused tags
-router.delete("/cleanup-unused", authenticate, authorize("admin"), cleanupUnusedTags);
+// DELETE /v1/tags/cleanup-unused - Cleanup unused tags
+router.delete("/v1/tags/cleanup-unused", authenticate, authorize("admin"), cleanupUnusedTags);
 
 // Usage management routes (admin/moderator)
-// PATCH /api/tags/:id/increment-usage - Increment tag usage count
-router.patch("/:id/increment-usage", authenticate, authorize("admin", "moderator"), incrementTagUsage);
+// PATCH /v1/tags/:id/increment-usage - Increment tag usage count
+router.patch("/v1/tags/:id/increment-usage", authenticate, authorize("admin", "moderator"), incrementTagUsage);
 
-// PATCH /api/tags/:id/decrement-usage - Decrement tag usage count
-router.patch("/:id/decrement-usage", authenticate, authorize("admin", "moderator"), decrementTagUsage);
+// PATCH /v1/tags/:id/decrement-usage - Decrement tag usage count
+router.patch("/v1/tags/:id/decrement-usage", authenticate, authorize("admin", "moderator"), decrementTagUsage);
 
-// POST /api/tags/bulk-usage - Bulk update tag usage
-router.post("/bulk-usage", authenticate, authorize("admin", "moderator"), bulkUpdateTagUsage);
+// POST /v1/tags/bulk-usage - Bulk update tag usage
+router.post("/v1/tags/bulk-usage", authenticate, authorize("admin", "moderator"), bulkUpdateTagUsage);
 
 export default router;

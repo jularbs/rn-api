@@ -74,7 +74,7 @@ app.use("/", optionsRoutes);
 app.use("/", topBannerRoutes);
 app.use("/", hostRoutes);
 app.use("/", mediaRoutes);
-app.use("/api/posts", postsRoutes);
+app.use("/", postsRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {

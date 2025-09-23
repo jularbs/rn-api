@@ -24,27 +24,27 @@ import {
 const router = Router();
 
 // Public routes
-router.get('/published', getPublishedPosts);
-router.get('/featured', getFeaturedPosts);
-router.get('/breaking', getBreakingNews);
-router.get('/trending', getTrendingPosts);
-router.get('/most-viewed', getMostViewedPosts);
-router.get('/search', searchPosts);
-router.get('/category/:categoryId', getPostsByCategory);
-router.get('/author/:authorId', getPostsByAuthor);
-router.get('/:id/related', getRelatedPosts);
-router.post('/:id/views', incrementViews);
+router.get("/v1/posts/v1/posts/published", getPublishedPosts);
+router.get("/v1/posts/featured", getFeaturedPosts);
+router.get("/v1/posts/breaking", getBreakingNews);
+router.get("/v1/posts/trending", getTrendingPosts);
+router.get("/v1/posts/most-viewed", getMostViewedPosts);
+router.get("/v1/posts/search", searchPosts);
+router.get("/v1/posts/category/:categoryId", getPostsByCategory);
+router.get("/v1/posts/author/:authorId", getPostsByAuthor);
+router.get("/v1/posts/:id/related", getRelatedPosts);
+router.post("/v1/posts/:id/views", incrementViews);
 
 // Admin/Moderator routes
-router.get('/stats', authenticate, authorize('admin', 'moderator'), getPostStats);
-router.get('/scheduled', authenticate, authorize('admin', 'moderator'), getScheduledPosts);
-router.get('/', authenticate, authorize('admin', 'moderator'), getPosts);
-router.post('/', authenticate, authorize('admin', 'moderator'), createPost);
-router.put('/:id', authenticate, authorize('admin', 'moderator'), updatePost);
-router.delete('/:id', authenticate, authorize('admin', 'moderator'), deletePost);
-router.patch('/:id/publish', authenticate, authorize('admin', 'moderator'), publishPost);
+router.get("/v1/posts/stats", authenticate, authorize("admin", "moderator"), getPostStats);
+router.get("/v1/posts/scheduled", authenticate, authorize("admin", "moderator"), getScheduledPosts);
+router.get("/v1/posts/", authenticate, authorize("admin", "moderator"), getPosts);
+router.post("/v1/posts/", authenticate, authorize("admin", "moderator"), createPost);
+router.put("/v1/posts/:id", authenticate, authorize("admin", "moderator"), updatePost);
+router.delete("/v1/posts/:id", authenticate, authorize("admin", "moderator"), deletePost);
+router.patch("/v1/posts/:id/publish", authenticate, authorize("admin", "moderator"), publishPost);
 
 // This should be last as it's a catch-all for ID/slug
-router.get('/:id', getPost);
+router.get("/v1/posts/:id", getPost);
 
 export default router;

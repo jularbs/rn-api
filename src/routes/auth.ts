@@ -19,28 +19,28 @@ const registerRateLimit = createRateLimiter({
   skipSuccessfulRequests: true,
 }); // 10 registrations per hour
 
-// POST /api/auth/register - Register new user
+// POST /v1/auth/register - Register new user
 router.post("/v1/auth/register", registerRateLimit, register);
 
-// POST /api/auth/login - Login user
+// POST /v1/auth/login - Login user
 router.post("/v1/auth/login", authRateLimit, login);
 
-// POST /api/auth/logout - Logout user
+// POST /v1/auth/logout - Logout user
 router.post("/v1/auth/logout", authenticate, logout);
 
-// POST /api/auth/request-password-reset - Request password reset
+// POST /v1/auth/request-password-reset - Request password reset
 router.post("/v1/auth/request-password-reset", authRateLimit, requestPasswordReset);
 
-// POST /api/auth/reset-password - Reset password using token
+// POST /v1/auth/reset-password - Reset password using token
 router.post("/v1/auth/reset-password", authRateLimit, resetPassword);
 
-// PUT /api/auth/change-password - Change password for logged-in users
+// PUT /v1/auth/change-password - Change password for logged-in users
 router.put("/v1/auth/change-password", authenticate, authRateLimit, changePassword);
 
-// GET /api/auth/verify-email - Verify user's email address
+// GET /v1/auth/verify-email - Verify user's email address
 router.get("/v1/auth/verify-email", authRateLimit, verifyEmail);
 
-// POST /api/auth/resend-verification - Resend email verification
+// POST /v1/auth/resend-verification - Resend email verification
 router.post("/v1/auth/resend-verification", authRateLimit, resendEmailVerification);
 
 export default router;

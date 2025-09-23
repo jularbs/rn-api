@@ -10,13 +10,13 @@ import {
 const router = Router();
 
 // Public routes for media access
-router.get("/key/:key", getMediaByKey); // Get media by S3 key (public access for displaying)
+router.get("/v1/media/key/:key", getMediaByKey); // Get media by S3 key (public access for displaying)
 
 // Protected routes (authentication required)
-router.get("/", authenticate, getAllMedia);
-router.get("/types/:type", authenticate, getMediaByType);
+router.get("/v1/media", authenticate, getAllMedia);
+router.get("/v1/media/types/:type", authenticate, getMediaByType);
 
 // Admin/Moderator only routes
-router.delete("/:id", authenticate, authorize("admin", "moderator"), deleteMedia);
+router.delete("/v1/media/:id", authenticate, authorize("admin", "moderator"), deleteMedia);
 
 export default router;

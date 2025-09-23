@@ -9,13 +9,13 @@ import { authenticate, authorize } from "@/middleware/auth";
 const router = Router();
 
 // Admin/Moderator routes (specific routes first)
-// POST /api/options - Create or update option
-router.post("/", authenticate, authorize("admin", "moderator"), createOrUpdateOption);
+// POST /v1/options - Create or update option
+router.post("/v1/options", authenticate, authorize("admin", "moderator"), createOrUpdateOption);
 
-// GET /api/options/:key - Get single option by key
-router.get("/:key", getOptionByKey);
+// GET /v1/options/:key - Get single option by key
+router.get("/v1/options/:key", getOptionByKey);
 
-// DELETE /api/options/:key - Delete option by key
-router.delete("/:key", authenticate, authorize("admin"), deleteOption);
+// DELETE /v1/options/:key - Delete option by key
+router.delete("/v1/options/:key", authenticate, authorize("admin"), deleteOption);
 
 export default router;

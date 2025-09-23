@@ -16,50 +16,50 @@ import { authenticate, authorize } from "@/middleware/auth";
 const router = Router();
 
 // Public routes
-// GET /api/hosts/search - Search hosts
-router.get("/search", searchHosts);
+// GET /v1/hosts/search - Search hosts
+router.get("/v1/hosts/search", searchHosts);
 
-// GET /api/hosts/slug/:slug - Get host by slug (public, active only)
-router.get("/slug/:slug", getHostBySlug);
+// GET /v1/hosts/slug/:slug - Get host by slug (public, active only)
+router.get("/v1/hosts/slug/:slug", getHostBySlug);
 
 // Protected routes - Admin and Moderator access
-// GET /api/hosts - Get all hosts with filtering
-router.get("/", authenticate, authorize("admin", "moderator"), getAllHosts);
+// GET /v1/hosts - Get all hosts with filtering
+router.get("/v1/hosts", authenticate, authorize("admin", "moderator"), getAllHosts);
 
-// POST /api/hosts - Create new host
-router.post("/", authenticate, authorize("admin", "moderator"), createHost);
+// POST /v1/hosts - Create new host
+router.post("/v1/hosts", authenticate, authorize("admin", "moderator"), createHost);
 
-// PATCH /api/hosts/:id/add-program - Add program to host
+// PATCH /v1/hosts/:id/add-program - Add program to host
 router.patch(
-  "/:id/add-program",
+  "/v1/hosts/:id/add-program",
   authenticate,
   authorize("admin", "moderator"),
   addProgramToHost
 );
 
-// PATCH /api/hosts/:id/remove-program - Remove program from host
+// PATCH /v1/hosts/:id/remove-program - Remove program from host
 router.patch(
-  "/:id/remove-program",
+  "/v1/hosts/:id/remove-program",
   authenticate,
   authorize("admin", "moderator"),
   removeProgramFromHost
 );
 
-// PATCH /api/hosts/:id/toggle-status - Toggle host status
+// PATCH /v1/hosts/:id/toggle-status - Toggle host status
 router.patch(
-  "/:id/toggle-status",
+  "/v1/hosts/:id/toggle-status",
   authenticate,
   authorize("admin", "moderator"),
   toggleHostStatus
 );
 
-// PUT /api/hosts/:id - Update host
-router.put("/:id", authenticate, authorize("admin", "moderator"), updateHost);
+// PUT /v1/hosts/:id - Update host
+router.put("/v1/hosts/:id", authenticate, authorize("admin", "moderator"), updateHost);
 
-// DELETE /api/hosts/:id - Delete host
-router.delete("/:id", authenticate, authorize("admin"), deleteHost);
+// DELETE /v1/hosts/:id - Delete host
+router.delete("/v1/hosts/:id", authenticate, authorize("admin"), deleteHost);
 
-// GET /api/hosts/:id - Get host by ID
-router.get("/:id", authenticate, authorize("admin", "moderator"), getHostById);
+// GET /v1/hosts/:id - Get host by ID
+router.get("/v1/hosts/:id", authenticate, authorize("admin", "moderator"), getHostById);
 
 export default router;

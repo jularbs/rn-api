@@ -78,14 +78,17 @@ export class S3Helper {
     try {
       // Process image if it's an image file
       if (isImage) {
-        // Compress and convert to AVIF
-        const compressionResult = await this.compressToAVIF(fileBuffer, {
+        // Compress using JPEG for better compatibility
+        const compressionResult = await this.compressToJPEG(fileBuffer, {
           quality,
           maxWidth,
           maxHeight,
         });
 
-        const compressionRatio = (((compressionResult.originalSize - compressionResult.size) / compressionResult.originalSize) * 100).toFixed(2);
+        const compressionRatio = (
+          ((compressionResult.originalSize - compressionResult.size) / compressionResult.originalSize) *
+          100
+        ).toFixed(2);
 
         const key = `${prefix}${folder}/${uniqueId}-${baseName}.avif`;
         const upload = await this.uploadToS3(compressionResult.buffer, key, bucket, "image/avif");
@@ -103,7 +106,9 @@ export class S3Helper {
           console.log(`Original size: ${this.formatFileSize(compressionResult.originalSize)}`);
           console.log(`Compressed size: ${this.formatFileSize(compressionResult.size)}`);
           console.log(`Compression ratio: ${compressionRatio}%`);
-          console.log(`Size reduction: ${this.formatFileSize(compressionResult.originalSize - compressionResult.size)}`);
+          console.log(
+            `Size reduction: ${this.formatFileSize(compressionResult.originalSize - compressionResult.size)}`
+          );
         }
       } else {
         // Upload original file
@@ -125,7 +130,10 @@ export class S3Helper {
   /**
    * Upload multiple files
    */
-  async uploadMultipleFiles(files: Array<{ buffer: Buffer | string; name: string }>, options: UploadOptions = {}): Promise<UploadResult[]> {
+  async uploadMultipleFiles(
+    files: Array<{ buffer: Buffer | string; name: string }>,
+    options: UploadOptions = {}
+  ): Promise<UploadResult[]> {
     const uploadPromises = files.map((file) => this.uploadFile(file.buffer, file.name, options));
 
     return Promise.all(uploadPromises);
@@ -233,9 +241,9 @@ export class S3Helper {
   }
 
   /**
-   * Compress image to AVIF format
+   * Compress image to JPEG format
    */
-  private async compressToAVIF(
+  private async compressToJPEG(
     buffer: Buffer,
     options: {
       quality: number;
@@ -250,9 +258,9 @@ export class S3Helper {
         fit: "inside",
         withoutEnlargement: true,
       })
-      .avif({
+      .jpeg({
         quality: options.quality,
-        effort: 6, // Maximum compression effort
+        progressive: true,
       })
       .toBuffer();
 
@@ -266,7 +274,12 @@ export class S3Helper {
   /**
    * Upload buffer to S3
    */
-  private async uploadToS3(buffer: Buffer, key: string, bucket: string, contentType: string): Promise<AWS.S3.ManagedUpload.SendData> {
+  private async uploadToS3(
+    buffer: Buffer,
+    key: string,
+    bucket: string,
+    contentType: string
+  ): Promise<AWS.S3.ManagedUpload.SendData> {
     const params = {
       Bucket: bucket,
       Key: key,

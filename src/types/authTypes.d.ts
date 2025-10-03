@@ -4,8 +4,7 @@ export interface AuthTokens {
 }
 
 export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   password: string;
   phone?: string;

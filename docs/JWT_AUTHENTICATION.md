@@ -23,8 +23,7 @@ POST /api/auth/register
 Content-Type: application/json
 
 {
-  "firstName": "John",
-  "lastName": "Doe",
+  "fullName": "John Doe",
   "email": "john@example.com",
   "password": "password123",
   "phone": "+1234567890",
@@ -41,8 +40,6 @@ Content-Type: application/json
   "data": {
     "user": {
       "id": "user_id",
-      "firstName": "John",
-      "lastName": "Doe",
       "fullName": "John Doe",
       "email": "john@example.com",
       "role": "user",
@@ -78,8 +75,6 @@ Content-Type: application/json
   "data": {
     "user": {
       "id": "user_id",
-      "firstName": "John",
-      "lastName": "Doe",
       "fullName": "John Doe",
       "email": "john@example.com",
       "role": "user",
@@ -117,7 +112,7 @@ JWT_REFRESH_EXPIRES_IN=30d
 
 - **POST** `/api/auth/register`
 - **Rate Limited:** 3 registrations per hour
-- **Body:** `firstName`, `lastName`, `email`, `password`, `phone` (optional), `role` (optional)
+- **Body:** `fullName`, `email`, `password`, `phone` (optional), `role` (optional)
 
 ### Login User
 
@@ -420,8 +415,7 @@ fetch("/api/auth/logout", {
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "firstName": "Test",
-    "lastName": "User",
+    "fullName": "Test User",
     "email": "test@example.com",
     "password": "password123"
   }'

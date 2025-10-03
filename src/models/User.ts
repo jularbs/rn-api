@@ -14,8 +14,7 @@ import validator from "validator";
 
 export interface IUser {
   _id: Types.ObjectId;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   password?: string;
   role: "user" | "admin" | "moderator";
@@ -29,9 +28,6 @@ export interface IUser {
   passwordResetExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
-
-  // Virtual fields
-  fullName: string;
 
   // Instance methods
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -78,16 +74,9 @@ export class User {
   @prop({
     required: true,
     trim: true,
-    maxlength: [50, "First name cannot exceed 50 characters"],
+    maxlength: [100, "Full name cannot exceed 100 characters"],
   })
-  public firstName!: string;
-
-  @prop({
-    required: true,
-    trim: true,
-    maxlength: [50, "Last name cannot exceed 50 characters"],
-  })
-  public lastName!: string;
+  public fullName!: string;
 
   @prop({
     required: true,
@@ -136,11 +125,6 @@ export class User {
 
   public createdAt!: Date;
   public updatedAt!: Date;
-
-  // Virtual for full name
-  public get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
 
   // Instance method to check password
   public async comparePassword(

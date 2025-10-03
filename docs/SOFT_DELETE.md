@@ -129,13 +129,11 @@ GET /api/users/deleted?page=1&limit=10&search=john
   "data": [
     {
       "id": "user_id",
-      "firstName": "John",
-      "lastName": "Doe",
+      "fullName": "John Doe",
       "email": "john@example.com",
       "deletedAt": "2025-08-27T12:00:00.000Z",
       "deletedBy": {
-        "firstName": "Admin",
-        "lastName": "User",
+        "fullName": "Admin User",
         "email": "admin@example.com"
       }
     }
@@ -195,13 +193,11 @@ GET /api/users/stats/overview
     "recentUsers": [...],
     "recentlyDeleted": [
       {
-        "firstName": "John",
-        "lastName": "Doe",
+        "fullName": "John Doe",
         "email": "john@example.com",
         "deletedAt": "2025-08-27T12:00:00.000Z",
         "deletedBy": {
-          "firstName": "Admin",
-          "lastName": "User"
+          "fullName": "Admin User"
         }
       }
     ]

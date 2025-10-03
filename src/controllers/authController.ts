@@ -13,7 +13,7 @@ import {
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phone, role }: RegisterRequest = req.body;
+    const { fullName, email, password, phone, role }: RegisterRequest = req.body;
 
     // Check if user already exists
     const existingUser = await UserModel.findOne({ email });
@@ -27,8 +27,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Create new user
     const userData = {
-      firstName,
-      lastName,
+      fullName,
       email,
       password,
       phone,
@@ -50,6 +49,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     };
 
     if (err.name === "ValidationError") {
+      console.log(err);
       const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
@@ -137,8 +137,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Return user data without sensitive information
     const userResponse = {
       id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
@@ -538,8 +536,6 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     // Return user data without sensitive information
     const userResponse = {
       id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
       fullName: user.fullName,
       email: user.email,
       role: user.role,

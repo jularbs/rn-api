@@ -90,13 +90,13 @@ export class S3Helper {
           100
         ).toFixed(2);
 
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}.avif`;
-        const upload = await this.uploadToS3(compressionResult.buffer, key, bucket, "image/avif");
+        const key = `${prefix}${folder}/${uniqueId}-${baseName}.jpeg`;
+        const upload = await this.uploadToS3(compressionResult.buffer, key, bucket, "image/jpeg");
 
         result.key = key;
         result.url = upload.Location!;
         result.size = compressionResult.size;
-        result.mimeType = "image/avif";
+        result.mimeType = "image/jpeg";
         result.originalSize = compressionResult.originalSize;
         result.compressionRatio = parseFloat(compressionRatio);
 
@@ -219,6 +219,7 @@ export class S3Helper {
     try {
       await s3.headObject(params).promise();
       return true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return false;
     }

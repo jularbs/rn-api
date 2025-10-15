@@ -117,7 +117,7 @@ export interface PostResponse {
 }
 
 export interface PostListResponse {
-  posts: PostResponse[];
+  data: PostResponse[];
   pagination: {
     page: number;
     limit: number;

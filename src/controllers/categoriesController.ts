@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { CategoryModel } from "@/models/Category";
+import { PostModel } from "@/models/Post";
 import { Types } from "mongoose";
 import slugify from "slugify";
 
@@ -55,16 +56,14 @@ export const getCategories = async (req: Request, res: Response): Promise<void> 
     res.json({
       success: true,
       message: "Categories retrieved successfully",
-      data: {
-        categories,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalItems: total,
-          itemsPerPage: limitNum,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+      data: categories,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       },
     });
   } catch (error: unknown) {
@@ -378,6 +377,13 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
       });
       return;
     }
+
+    // Update all posts that reference this category
+    // Remove the category from posts' categories array
+    await PostModel.updateMany(
+      { categories: id },
+      { $pull: { categories: id } }
+    );
 
     // Delete the category
     const deletedCategory = await CategoryModel.findByIdAndDelete(id);

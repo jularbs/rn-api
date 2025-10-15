@@ -52,16 +52,14 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
     res.json({
       success: true,
       message: "Hosts retrieved successfully",
-      data: {
-        hosts,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalItems: total,
-          itemsPerPage: limitNum,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+      data: hosts,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       },
     });
   } catch (error: unknown) {

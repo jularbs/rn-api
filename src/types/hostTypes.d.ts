@@ -90,18 +90,14 @@ export interface HostResponse {
 export interface HostsResponse {
   success: boolean;
   message: string;
-  data: {
-    hosts: IHost[];
-    pagination: HostPagination;
-  };
+  data: IHost[];
+  pagination: HostPagination;
 }
 
 export interface SearchHostsResponse {
   success: boolean;
   message: string;
-  data: {
-    hosts: IHost[];
-  };
+  data: IHost[];
 }
 
 // Program Management Types
@@ -148,10 +144,8 @@ export interface PopulatedHostResponse {
 export interface PopulatedHostsResponse {
   success: boolean;
   message: string;
-  data: {
-    hosts: PopulatedHost[];
-    pagination: HostPagination;
-  };
+  data: PopulatedHost[];
+  pagination: HostPagination;
 }
 
 // Sort options

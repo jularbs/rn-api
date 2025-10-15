@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { MediaModel } from "@/models/Media";
 import { Types } from "mongoose";
+import formidable from "formidable";
+import fs from "fs";
+import s3Helper from "@/utils/s3Helper";
 
 // GET /api/media - Get all media files with filtering and pagination
 export const getAllMedia = async (req: Request, res: Response): Promise<void> => {
@@ -51,7 +54,7 @@ export const getAllMedia = async (req: Request, res: Response): Promise<void> =>
             "application/vnd.ms-powerpoint",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             "text/plain",
-            "text/csv"
+            "text/csv",
           ];
           filter.mimeType = { $in: documentTypes };
           break;
@@ -81,10 +84,7 @@ export const getAllMedia = async (req: Request, res: Response): Promise<void> =>
     sortObj[sortField] = sortDirection;
 
     // Get media files with pagination
-    const mediaFiles = await MediaModel.find(filter)
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum);
+    const mediaFiles = await MediaModel.find(filter).sort(sortObj).skip(skip).limit(limitNum);
 
     // Get total count for pagination
     const total = await MediaModel.countDocuments(filter);
@@ -93,16 +93,14 @@ export const getAllMedia = async (req: Request, res: Response): Promise<void> =>
     res.json({
       success: true,
       message: "Media files retrieved successfully",
-      data: {
-        media: mediaFiles,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalItems: total,
-          itemsPerPage: limitNum,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+      data: mediaFiles,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       },
     });
   } catch (error: unknown) {
@@ -228,6 +226,75 @@ export const getMediaByType = async (req: Request, res: Response): Promise<void>
     res.status(500).json({
       success: false,
       message: "Error retrieving media files by type",
+      error: err.message,
+    });
+  }
+};
+
+//POST /api/media - Create media for image uploading
+export const uploadMediaFromEditor = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const form = formidable({
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      filter: ({ mimetype }) => {
+        // Accept only image files
+        return mimetype?.startsWith("image/") || false;
+      },
+    });
+
+    const [, files] = await form.parse(req);
+
+    if (!files.image) {
+      res.status(400).json({
+        success: false,
+        message: "No image uploaded",
+      });
+      return;
+    }
+
+    const image = files.image;
+
+    if (image) {
+      const file = Array.isArray(image) ? image[0] : image;
+      const fileBuffer = await fs.promises.readFile(file.filepath);
+
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      
+      const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "untitled.jpeg", {
+        folder: `attachments/${year}/${month}`,
+        quality: 80,
+        maxWidth: 900,
+        maxHeight: 900,
+      });
+
+      const mediaData = {
+        originalName: file.originalFilename || "untitled.jpeg",
+        key: uploadResult.key,
+        bucket: uploadResult.bucket,
+        url: uploadResult.url,
+        mimeType: uploadResult.mimeType,
+        size: uploadResult.size || file.size,
+      };
+
+      const media = new MediaModel(mediaData);
+      await media.save();
+      await fs.promises.unlink(file.filepath);
+
+      res.status(200).json({
+        success: true,
+        message: "Image uploaded successfully",
+        data: uploadResult,
+      });
+      return;
+    }
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Upload media from editor error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error uploading media",
       error: err.message,
     });
   }

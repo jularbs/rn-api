@@ -81,16 +81,14 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
     res.json({
       success: true,
       message: "Tags retrieved successfully",
-      data: {
-        tags,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalItems: total,
-          itemsPerPage: limitNum,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+      data: tags,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       },
     });
   } catch (error: unknown) {
@@ -318,7 +316,7 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
     res.status(201).json({
       success: true,
       message: "Tag created successfully",
-      data: { tag },
+      data: tag,
     });
   } catch (error: unknown) {
     const err = error as Error & {

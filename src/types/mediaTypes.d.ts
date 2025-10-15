@@ -63,10 +63,8 @@ export interface IMediaPagination {
 export interface IMediaListResponse {
   success: boolean;
   message: string;
-  data: {
-    media: IMediaResponse[];
-    pagination: IMediaPagination;
-  };
+  data: IMediaResponse[];
+  pagination: IMediaPagination;
 }
 
 export interface IMediaSingleResponse {

@@ -44,16 +44,14 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
     res.json({
       success: true,
       message: "Stations retrieved successfully",
-      data: {
-        stations,
-        pagination: {
-          currentPage: pageNum,
-          totalPages,
-          totalItems: total,
-          itemsPerPage: limitNum,
-          hasNextPage: pageNum < totalPages,
-          hasPrevPage: pageNum > 1,
-        },
+      data: stations,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
       },
     });
   } catch (error: unknown) {

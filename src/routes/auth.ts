@@ -1,7 +1,16 @@
 import express from "express";
 import { authenticate } from "@/middleware/auth";
 import { createRateLimiter } from "@/middleware";
-import { register, login, logout, requestPasswordReset, resetPassword, changePassword, verifyEmail, resendEmailVerification } from "@/controllers/authController";
+import {
+  register,
+  login,
+  logout,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
+  verifyEmail,
+  resendEmailVerification,
+} from "@/controllers/authController";
 
 const router = express.Router();
 
@@ -27,6 +36,14 @@ router.post("/v1/auth/login", authRateLimit, login);
 
 // POST /v1/auth/logout - Logout user
 router.post("/v1/auth/logout", authenticate, logout);
+
+//GET /v1/auth/validate - Validate if token is still valid
+router.get("/v1/auth/validate", authenticate, (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Token is valid.",
+  });
+});
 
 // POST /v1/auth/request-password-reset - Request password reset
 router.post("/v1/auth/request-password-reset", authRateLimit, requestPasswordReset);

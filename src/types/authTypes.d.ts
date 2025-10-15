@@ -8,7 +8,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone?: string;
-  role?: "user" | "admin" | "moderator";
+  role?: "user" | "admin" | "manager";
 }
 
 export interface LoginRequest {
@@ -32,4 +32,4 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-export type UserRole = "user" | "admin" | "moderator" | "owner";
+export type UserRole = "admin" | "manager" | "managing-editor" | "digital-content-producer" | "owner";

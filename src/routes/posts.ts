@@ -35,14 +35,14 @@ router.get("/v1/posts/author/:authorId", getPostsByAuthor);
 router.get("/v1/posts/:id/related", getRelatedPosts);
 router.post("/v1/posts/:id/views", incrementViews);
 
-// Admin/Moderator routes
-router.get("/v1/posts/stats", authenticate, authorize("admin", "moderator"), getPostStats);
-router.get("/v1/posts/scheduled", authenticate, authorize("admin", "moderator"), getScheduledPosts);
-router.get("/v1/posts/", authenticate, authorize("admin", "moderator"), getPosts);
-router.post("/v1/posts/", authenticate, authorize("admin", "moderator"), createPost);
-router.put("/v1/posts/:id", authenticate, authorize("admin", "moderator"), updatePost);
-router.delete("/v1/posts/:id", authenticate, authorize("admin", "moderator"), deletePost);
-router.patch("/v1/posts/:id/publish", authenticate, authorize("admin", "moderator"), publishPost);
+// Admin/manager routes
+router.get("/v1/posts/stats", authenticate, authorize("admin", "manager"), getPostStats);
+router.get("/v1/posts/scheduled", authenticate, authorize("admin", "manager"), getScheduledPosts);
+router.get("/v1/posts/", authenticate, authorize("admin", "manager"), getPosts);
+router.post("/v1/posts/", authenticate, authorize("admin", "manager"), createPost);
+router.put("/v1/posts/:id", authenticate, authorize("admin", "manager"), updatePost);
+router.delete("/v1/posts/:id", authenticate, authorize("admin", "manager"), deletePost);
+router.patch("/v1/posts/:id/publish", authenticate, authorize("admin", "manager"), publishPost);
 
 // This should be last as it's a catch-all for ID/slug
 router.get("/v1/posts/:id", getPost);

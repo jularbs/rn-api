@@ -18,11 +18,11 @@ router.get("/v1/categories", optionalAuth, getCategories);
 router.get("/v1/categories/id/:id", optionalAuth, getCategoryById);
 router.get("/v1/categories/:slug", getCategoryBySlug);
 
-// Admin/Moderator only routes
-router.post("/v1/categories", authenticate, authorize("admin", "moderator"), createCategory);
-router.put("/v1/categories/:id", authenticate, authorize("admin", "moderator"), updateCategory);
-router.delete("/v1/categories/:id", authenticate, authorize("admin", "moderator"), deleteCategory);
-router.patch("/v1/categories/:id/status", authenticate, authorize("admin", "moderator"), toggleCategoryStatus);
-router.post("/v1/categories/reorder", authenticate, authorize("admin", "moderator"), reorderCategories);
+// Admin/manager only routes
+router.post("/v1/categories", authenticate, authorize("admin", "manager"), createCategory);
+router.put("/v1/categories/:id", authenticate, authorize("admin", "manager"), updateCategory);
+router.delete("/v1/categories/:id", authenticate, authorize("admin", "manager"), deleteCategory);
+router.patch("/v1/categories/:id/status", authenticate, authorize("admin", "manager"), toggleCategoryStatus);
+router.post("/v1/categories/reorder", authenticate, authorize("admin", "manager"), reorderCategories);
 
 export default router;

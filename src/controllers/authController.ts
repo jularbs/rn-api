@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email,
       password,
       phone,
-      role: role || "user", // Default to user role
+      role: role || "digital-content-producer", // Default to digital-content-producer role
     };
 
     const user = new UserModel(userData);

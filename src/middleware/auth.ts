@@ -30,19 +30,12 @@ export const verifyToken = (token: string): { userId: string } => {
 };
 
 // Authentication middleware
-export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     let token: string | undefined;
 
     // Check for token in Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }
     // Check for token in cookies (if you're using cookie-based auth)
@@ -85,8 +78,7 @@ export const authenticate = async (
     if (err.name === "JsonWebTokenError") {
       res.status(401).json({
         success: false,
-        message:
-          "Invalid access token. Please log in to obtain a new access token.",
+        message: "Invalid access token. Please log in to obtain a new access token.",
       });
       return;
     }
@@ -138,18 +130,11 @@ export const authorize = (...roles: UserRole[]) => {
 };
 
 // Optional authentication - authenticate if token is provided, but don't require it
-export const optionalAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     let token: string | undefined;
 
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     } else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
@@ -158,15 +143,14 @@ export const optionalAuth = async (
     if (token) {
       try {
         const decoded = verifyToken(token);
-        const user = await UserModel.findById(decoded.userId).select(
-          "-password"
-        );
+        const user = await UserModel.findById(decoded.userId).select("-password");
 
         if (user) {
           req.user = user;
           user.lastLogin = new Date();
           await user.save({ validateBeforeSave: false });
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         // Token is invalid but we don't return error for optional auth
         req.user = undefined;
@@ -174,6 +158,7 @@ export const optionalAuth = async (
     }
 
     next();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     // For optional auth, we continue even if there's an error
     req.user = undefined;

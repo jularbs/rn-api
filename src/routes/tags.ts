@@ -36,15 +36,15 @@ router.get("/v1/tags/slug/:slug", getTagBySlug);
 router.get("/v1/tags/:id", getTagById);
 
 // Protected routes - Require authentication
-// Admin/Moderator only routes
+// Admin/manager only routes
 // POST /v1/tags - Create new tag
-router.post("/v1/tags/", authenticate, authorize("admin", "moderator"), createTag);
+router.post("/v1/tags/", authenticate, authorize("admin", "manager"), createTag);
 
 // POST /v1/tags/batch - Create multiple tags
-router.post("/v1/tags/batch", authenticate, authorize("admin", "moderator"), createTagsBatch);
+router.post("/v1/tags/batch", authenticate, authorize("admin", "manager"), createTagsBatch);
 
 // PUT /v1/tags/:id - Update tag by ID
-router.put("/v1/tags/:id", authenticate, authorize("admin", "moderator"), updateTag);
+router.put("/v1/tags/:id", authenticate, authorize("admin", "manager"), updateTag);
 
 // DELETE /v1/tags/:id - Delete tag by ID
 router.delete("/v1/tags/:id", authenticate, authorize("admin"), deleteTag);
@@ -56,14 +56,14 @@ router.get("/v1/tags/stats", authenticate, authorize("admin"), getTagStats);
 // DELETE /v1/tags/cleanup-unused - Cleanup unused tags
 router.delete("/v1/tags/cleanup-unused", authenticate, authorize("admin"), cleanupUnusedTags);
 
-// Usage management routes (admin/moderator)
+// Usage management routes (admin/manager)
 // PATCH /v1/tags/:id/increment-usage - Increment tag usage count
-router.patch("/v1/tags/:id/increment-usage", authenticate, authorize("admin", "moderator"), incrementTagUsage);
+router.patch("/v1/tags/:id/increment-usage", authenticate, authorize("admin", "manager"), incrementTagUsage);
 
 // PATCH /v1/tags/:id/decrement-usage - Decrement tag usage count
-router.patch("/v1/tags/:id/decrement-usage", authenticate, authorize("admin", "moderator"), decrementTagUsage);
+router.patch("/v1/tags/:id/decrement-usage", authenticate, authorize("admin", "manager"), decrementTagUsage);
 
 // POST /v1/tags/bulk-usage - Bulk update tag usage
-router.post("/v1/tags/bulk-usage", authenticate, authorize("admin", "moderator"), bulkUpdateTagUsage);
+router.post("/v1/tags/bulk-usage", authenticate, authorize("admin", "manager"), bulkUpdateTagUsage);
 
 export default router;

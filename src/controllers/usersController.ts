@@ -105,6 +105,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       limit = 10,
       role,
       search,
+      accountVerified,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query;
@@ -117,6 +118,10 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
 
     if (role) {
       query.role = role;
+    }
+
+    if(accountVerified !== undefined) {
+      query.accountVerified = accountVerified === 'true';
     }
 
     if (search) {

@@ -32,27 +32,27 @@ router.patch("/v1/top-banners/:id/increment-clicks", incrementClicks);
 
 // Protected routes - Require authentication and authorization
 
-// Admin/Moderator routes (specific routes first)
+// Admin/manager routes (specific routes first)
 // GET /v1/top-banners - Get all banners with filtering and pagination
-router.get("/v1/top-banners", authenticate, authorize("admin", "moderator"), getAllTopBanners);
+router.get("/v1/top-banners", authenticate, authorize("admin", "manager"), getAllTopBanners);
 
 // GET /v1/top-banners/search - Search banners
-router.get("/v1/top-banners/search", authenticate, authorize("admin", "moderator"), searchBanners);
+router.get("/v1/top-banners/search", authenticate, authorize("admin", "manager"), searchBanners);
 
 // POST /v1/top-banners - Create new banner
-router.post("/v1/top-banners", authenticate, authorize("admin", "moderator"), createTopBanner);
+router.post("/v1/top-banners", authenticate, authorize("admin", "manager"), createTopBanner);
 
 // Dynamic routes (must come after specific routes)
 // GET /v1/top-banners/:id - Get banner by ID
-router.get("/v1/top-banners/:id", authenticate, authorize("admin", "moderator"), getTopBannerById);
+router.get("/v1/top-banners/:id", authenticate, authorize("admin", "manager"), getTopBannerById);
 
 // PUT /v1/top-banners/:id - Update banner by ID
-router.put("/v1/top-banners/:id", authenticate, authorize("admin", "moderator"), updateTopBanner);
+router.put("/v1/top-banners/:id", authenticate, authorize("admin", "manager"), updateTopBanner);
 
 // DELETE /v1/top-banners/:id - Delete banner by ID
 router.delete("/v1/top-banners/:id", authenticate, authorize("admin"), deleteTopBanner);
 
 // PATCH /v1/top-banners/:id/toggle-visibility - Toggle banner visibility
-router.patch("/v1/top-banners/:id/toggle-visibility", authenticate, authorize("admin", "moderator"), toggleBannerVisibility);
+router.patch("/v1/top-banners/:id/toggle-visibility", authenticate, authorize("admin", "manager"), toggleBannerVisibility);
 
 export default router;

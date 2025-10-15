@@ -17,7 +17,7 @@ export interface IUser {
   fullName: string;
   email: string;
   password?: string;
-  role: "user" | "admin" | "moderator";
+  role: "admin" | "manager" | "managing-editor" | "digital-content-producer";
   deletedAt?: Date;
   deletedBy?: Ref<User>;
   lastLogin?: Date;
@@ -94,10 +94,10 @@ export class User {
   public password!: string;
 
   @prop({
-    enum: ["user", "admin", "moderator"],
-    default: "user",
+    enum: ["admin", "manager", "managing-editor", "digital-content-producer"],
+    default: "digital-content-producer",
   })
-  public role!: "user" | "admin" | "moderator";
+  public role!: "admin" | "manager" | "managing-editor" | "digital-content-producer";
 
   @prop({ default: null })
   public deletedAt?: Date;

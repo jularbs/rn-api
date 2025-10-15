@@ -10,10 +10,10 @@ router.get("/v1/stations", getAllStations);
 router.get("/v1/stations/id/:id", getStationById);
 router.get("/v1/stations/:slug", getStationBySlug);
 
-// Admin/Moderator only routes
-router.post("/v1/stations", authenticate, authorize("admin", "moderator"), createStation);
-router.put("/v1/stations/:id", authenticate, authorize("admin", "moderator"), updateStation);
-router.patch("/v1/stations/:id/status", authenticate, authorize("admin", "moderator"), toggleStationStatus);
+// Admin/manager only routes
+router.post("/v1/stations", authenticate, authorize("admin", "manager"), createStation);
+router.put("/v1/stations/:id", authenticate, authorize("admin", "manager"), updateStation);
+router.patch("/v1/stations/:id/status", authenticate, authorize("admin", "manager"), toggleStationStatus);
 
 // Admin only routes
 router.delete("/v1/stations/:id", authenticate, authorize("admin"), deleteStation);

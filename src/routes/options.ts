@@ -8,9 +8,9 @@ import { authenticate, authorize } from "@/middleware/auth";
 
 const router = Router();
 
-// Admin/Moderator routes (specific routes first)
+// Admin/manager routes (specific routes first)
 // POST /v1/options - Create or update option
-router.post("/v1/options", authenticate, authorize("admin", "moderator"), createOrUpdateOption);
+router.post("/v1/options", authenticate, authorize("admin", "manager"), createOrUpdateOption);
 
 // GET /v1/options/:key - Get single option by key
 router.get("/v1/options/:key", getOptionByKey);

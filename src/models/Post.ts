@@ -8,6 +8,12 @@ export enum PostStatus {
   PUBLISHED = "published",
 }
 
+// Enum for post type
+export enum PostType {
+  BASIC_ARTICLE = "basic article",
+  VIDEO_ARTICLE = "video article",
+}
+
 // Interface for Post
 export interface IPost {
   _id: Types.ObjectId;
@@ -16,18 +22,58 @@ export interface IPost {
   excerpt?: string;
   content: string;
   author: Types.ObjectId;
-  category?: Types.ObjectId;
+  categories: Types.ObjectId[];
   tags: Types.ObjectId[];
+  type: PostType;
   featuredImage?: Types.ObjectId;
+  featuredImageCaption?: string;
   thumbnailImage?: Types.ObjectId;
+  videoSourceUrl?: string;
+  videoDuration?: string;
   status: PostStatus;
   publishedAt?: Date;
-  scheduledAt?: Date;
   viewCount: number;
-  isBreaking: boolean;
   isFeatured: boolean;
   metaTitle?: string;
   metaDescription?: string;
+  
+  // SEO Fields
+  keywords?: string;
+  canonicalUrl?: string;
+  
+  // Robots meta
+  robotsIndex: boolean;
+  robotsFollow: boolean;
+  robotsArchive: boolean;
+  robotsSnippet: boolean;
+  robotsImageIndex: boolean;
+  
+  // Open Graph
+  ogTitle?: string;
+  ogDescription?: string;
+  ogType?: string;
+  ogUrl?: string;
+  ogSiteName?: string;
+  ogLocale?: string;
+  ogImage?: Types.ObjectId;
+  ogImageAlt?: string;
+  
+  // Twitter Cards
+  twitterCard?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterSite?: string;
+  twitterCreator?: string;
+  twitterImage?: Types.ObjectId;
+  twitterImageAlt?: string;
+  
+  // Additional SEO
+  seoAuthor?: string;
+  publisher?: string;
+  focusKeyword?: string;
+  readingTime?: string;
+  metaImage?: Types.ObjectId;
+  metaImageAlt?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,20 +91,14 @@ export interface IPost {
   if (this.isModified("status") && this.status === PostStatus.PUBLISHED && !this.publishedAt) {
     this.publishedAt = new Date();
   }
-
-  // Set scheduledAt to current date if it's empty
-  if (!this.scheduledAt) {
-    this.scheduledAt = new Date();
-  }
 })
 @index({ title: 1 })
-@index({ category: 1 })
+@index({ categories: 1 })
 @index({ tags: 1 })
+@index({ type: 1 })
 @index({ status: 1 })
-@index({ scheduledAt: 1 })
 @index({ publishedAt: -1 })
 @index({ viewCount: -1 })
-@index({ isBreaking: 1 })
 @index({ isFeatured: 1 })
 @index({ createdAt: -1 })
 @modelOptions({
@@ -87,17 +127,29 @@ export class Post implements IPost {
   @prop({ required: true, ref: "User" })
   public author!: Types.ObjectId;
 
-  @prop({ ref: "Category" })
-  public category?: Types.ObjectId;
+  @prop({ ref: "Category", type: () => [Types.ObjectId], default: [] })
+  public categories!: Types.ObjectId[];
 
   @prop({ ref: "Tag", type: () => [Types.ObjectId], default: [] })
   public tags!: Types.ObjectId[];
 
+  @prop({ enum: PostType, default: PostType.BASIC_ARTICLE })
+  public type!: PostType;
+
   @prop({ ref: "Media" })
   public featuredImage?: Types.ObjectId;
 
+  @prop({ trim: true, maxlength: 500 })
+  public featuredImageCaption?: string;
+
   @prop({ ref: "Media" })
   public thumbnailImage?: Types.ObjectId;
+
+  @prop({ trim: true })
+  public videoSourceUrl?: string;
+
+  @prop({ trim: true, maxlength: 20 })
+  public videoDuration?: string;
 
   @prop({ enum: PostStatus, default: PostStatus.DRAFT })
   public status!: PostStatus;
@@ -105,14 +157,8 @@ export class Post implements IPost {
   @prop()
   public publishedAt?: Date;
 
-  @prop()
-  public scheduledAt?: Date;
-
   @prop({ default: 0, min: 0 })
   public viewCount!: number;
-
-  @prop({ default: false })
-  public isBreaking!: boolean;
 
   @prop({ default: false })
   public isFeatured!: boolean;
@@ -123,24 +169,100 @@ export class Post implements IPost {
   @prop({ trim: true, maxlength: 500 })
   public metaDescription?: string;
 
+  @prop({ trim: true })
+  public keywords?: string;
+
+  @prop({ trim: true })
+  public canonicalUrl?: string;
+
+  // Robots meta
+  @prop({ default: true })
+  public robotsIndex!: boolean;
+
+  @prop({ default: true })
+  public robotsFollow!: boolean;
+
+  @prop({ default: true })
+  public robotsArchive!: boolean;
+
+  @prop({ default: true })
+  public robotsSnippet!: boolean;
+
+  @prop({ default: true })
+  public robotsImageIndex!: boolean;
+
+  // Open Graph
+  @prop({ trim: true, maxlength: 300 })
+  public ogTitle?: string;
+
+  @prop({ trim: true, maxlength: 500 })
+  public ogDescription?: string;
+
+  @prop({ trim: true })
+  public ogType?: string;
+
+  @prop({ trim: true })
+  public ogUrl?: string;
+
+  @prop({ trim: true })
+  public ogSiteName?: string;
+
+  @prop({ trim: true })
+  public ogLocale?: string;
+
+  @prop({ ref: "Media" })
+  public ogImage?: Types.ObjectId;
+
+  @prop({ trim: true })
+  public ogImageAlt?: string;
+
+  // Twitter Cards
+  @prop({ trim: true })
+  public twitterCard?: string;
+
+  @prop({ trim: true, maxlength: 300 })
+  public twitterTitle?: string;
+
+  @prop({ trim: true, maxlength: 500 })
+  public twitterDescription?: string;
+
+  @prop({ trim: true })
+  public twitterSite?: string;
+
+  @prop({ trim: true })
+  public twitterCreator?: string;
+
+  @prop({ ref: "Media" })
+  public twitterImage?: Types.ObjectId;
+
+  @prop({ trim: true })
+  public twitterImageAlt?: string;
+
+  // Additional SEO
+  @prop({ trim: true })
+  public seoAuthor?: string;
+
+  @prop({ trim: true })
+  public publisher?: string;
+
+  @prop({ trim: true })
+  public focusKeyword?: string;
+
+  @prop({ trim: true })
+  public readingTime?: string;
+
+  @prop({ ref: "Media" })
+  public metaImage?: Types.ObjectId;
+
+  @prop({ trim: true })
+  public metaImageAlt?: string;
+
   public createdAt!: Date;
   public updatedAt!: Date;
 
   // Instance method to increment view count
   public async incrementViews() {
     return await PostModel.findByIdAndUpdate(this._id, { $inc: { viewCount: 1 } }, { new: true });
-  }
-
-  // Instance method to publish post
-  public async publish() {
-    return await PostModel.findByIdAndUpdate(
-      this._id,
-      {
-        status: PostStatus.PUBLISHED,
-        publishedAt: new Date(),
-      },
-      { new: true }
-    );
   }
 
   // Static method to get published posts
@@ -152,73 +274,7 @@ export class Post implements IPost {
       .sort({ publishedAt: -1 })
       .limit(limit)
       .skip(skip)
-      .populate("author category tags featuredImage thumbnailImage");
-  }
-
-  // Static method to get featured posts
-  public static getFeaturedPosts(limit = 5) {
-    return PostModel.find({
-      status: PostStatus.PUBLISHED,
-      isFeatured: true,
-      publishedAt: { $lte: new Date() },
-    })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .populate("author category tags featuredImage thumbnailImage");
-  }
-
-  // Static method to get breaking news
-  public static getBreakingNews(limit = 3) {
-    return PostModel.find({
-      status: PostStatus.PUBLISHED,
-      isBreaking: true,
-      publishedAt: { $lte: new Date() },
-    })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .populate("author category tags featuredImage thumbnailImage");
-  }
-
-  // Static method to get posts by category
-  public static getByCategory(categoryId: string | Types.ObjectId, limit = 10, skip = 0) {
-    const id = typeof categoryId === "string" ? new Types.ObjectId(categoryId) : categoryId;
-    return PostModel.find({
-      category: id,
-      status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() },
-    })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .skip(skip)
-      .populate("author category tags featuredImage thumbnailImage");
-  }
-
-  // Static method to get posts by author
-  public static getByAuthor(authorId: string | Types.ObjectId, limit = 10, skip = 0) {
-    const id = typeof authorId === "string" ? new Types.ObjectId(authorId) : authorId;
-    return PostModel.find({
-      author: id,
-      status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() },
-    })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .skip(skip)
-      .populate("author category tags featuredImage thumbnailImage");
-  }
-
-  // Static method to search posts
-  public static searchPosts(query: string, limit = 10, skip = 0) {
-    const searchRegex = new RegExp(query, "i");
-    return PostModel.find({
-      $or: [{ title: searchRegex }, { excerpt: searchRegex }, { content: searchRegex }],
-      status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: new Date() },
-    })
-      .sort({ publishedAt: -1 })
-      .limit(limit)
-      .skip(skip)
-      .populate("author category tags featuredImage thumbnailImage");
+      .populate("author categories tags featuredImage thumbnailImage");
   }
 
   // Static method to get most viewed posts
@@ -232,13 +288,13 @@ export class Post implements IPost {
     })
       .sort({ viewCount: -1 })
       .limit(limit)
-      .populate("author category tags featuredImage thumbnailImage");
+      .populate("author categories tags featuredImage thumbnailImage");
   }
 
   // Static method to get related posts
   public static getRelatedPosts(
     postId: string | Types.ObjectId,
-    categoryId?: Types.ObjectId,
+    categoryIds?: Types.ObjectId[],
     tagIds?: Types.ObjectId[],
     limit = 5
   ) {
@@ -249,8 +305,8 @@ export class Post implements IPost {
       publishedAt: { $lte: new Date() },
     };
 
-    if (categoryId) {
-      filter.category = categoryId;
+    if (categoryIds && categoryIds.length > 0) {
+      filter.categories = { $in: categoryIds };
     } else if (tagIds && tagIds.length > 0) {
       filter.tags = { $in: tagIds };
     }
@@ -258,18 +314,10 @@ export class Post implements IPost {
     return PostModel.find(filter)
       .sort({ publishedAt: -1 })
       .limit(limit)
-      .populate("author category tags featuredImage thumbnailImage");
+      .populate("author categories tags featuredImage thumbnailImage");
   }
 
-  // Static method to get scheduled posts
-  public static getScheduledPosts() {
-    return PostModel.find({
-      status: PostStatus.PUBLISHED,
-      scheduledAt: { $lte: new Date() },
-    })
-      .sort({ scheduledAt: 1 })
-      .populate("author category tags featuredImage thumbnailImage");
-  }
+
 
   // Static method to get post statistics
   public static async getPostStats() {
@@ -289,7 +337,6 @@ export class Post implements IPost {
           _id: null,
           totalPosts: { $sum: 1 },
           totalViews: { $sum: "$viewCount" },
-          breakingNews: { $sum: { $cond: ["$isBreaking", 1, 0] } },
           featuredPosts: { $sum: { $cond: ["$isFeatured", 1, 0] } },
         },
       },
@@ -300,7 +347,6 @@ export class Post implements IPost {
       total: totalStats[0] || {
         totalPosts: 0,
         totalViews: 0,
-        breakingNews: 0,
         featuredPosts: 0,
       },
     };
@@ -324,7 +370,6 @@ export class Post implements IPost {
             $add: [
               { $multiply: ["$viewCount", 1] },
               { $cond: ["$isFeatured", 10, 0] },
-              { $cond: ["$isBreaking", 15, 0] },
             ],
           },
         },

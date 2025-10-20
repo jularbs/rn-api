@@ -6,15 +6,15 @@ import { Types } from "mongoose";
 // GET /api/tags - Get all tags with filtering and pagination
 export const getAllTags = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { 
-      page = "1", 
-      limit = "10", 
+    const {
+      page = "1",
+      limit = "10",
       search,
       sortBy = "name",
       sortOrder = "asc",
       minUsage,
       maxUsage,
-      color
+      id,
     } = req.query;
 
     // Build filter object
@@ -23,29 +23,24 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
     // Filter by usage count range
     if (minUsage !== undefined || maxUsage !== undefined) {
       const usageFilter: Record<string, number> = {};
-      
+
       if (minUsage !== undefined) {
         const min = parseInt(minUsage as string, 10);
         if (!isNaN(min)) {
           usageFilter.$gte = min;
         }
       }
-      
+
       if (maxUsage !== undefined) {
         const max = parseInt(maxUsage as string, 10);
         if (!isNaN(max)) {
           usageFilter.$lte = max;
         }
       }
-      
+
       if (Object.keys(usageFilter).length > 0) {
         filter.usageCount = usageFilter;
       }
-    }
-
-    // Filter by color
-    if (color && typeof color === "string") {
-      filter.color = color;
     }
 
     // Search functionality
@@ -53,7 +48,18 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
-        { slug: { $regex: search, $options: "i" } }
+        { slug: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    //filter IDs
+    if(id && typeof id === "string" && JSON.parse(id).length > 0) {
+      filter.$and = [
+        {
+          _id: {
+            $in: JSON.parse(id),
+          },
+        },
       ];
     }
 
@@ -69,10 +75,7 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
     sortObj[sortField] = sortDirection;
 
     // Get tags with pagination
-    const tags = await TagModel.find(filter)
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum);
+    const tags = await TagModel.find(filter).sort(sortObj).skip(skip).limit(limitNum);
 
     // Get total count for pagination
     const total = await TagModel.countDocuments(filter);
@@ -160,9 +163,9 @@ export const getTagStats = async (req: Request, res: Response): Promise<void> =>
     res.json({
       success: true,
       message: "Tag statistics retrieved successfully",
-      data: { 
+      data: {
         stats,
-        usageDistribution: distribution
+        usageDistribution: distribution,
       },
     });
   } catch (error: unknown) {
@@ -221,8 +224,8 @@ export const getTagBySlug = async (req: Request, res: Response): Promise<void> =
   try {
     const { slug } = req.params;
 
-    const tag = await TagModel.findOne({ 
-      slug: slug.toLowerCase()
+    const tag = await TagModel.findOne({
+      slug: slug.toLowerCase(),
     });
 
     if (!tag) {
@@ -252,14 +255,7 @@ export const getTagBySlug = async (req: Request, res: Response): Promise<void> =
 // POST /api/tags - Create new tag
 export const createTag = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      name,
-      slug,
-      description,
-      color,
-      metaTitle,
-      metaDescription,
-    } = req.body;
+    const { name, slug, description, color, metaTitle, metaDescription } = req.body;
 
     // Validate required fields
     if (!name) {
@@ -273,9 +269,10 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
     // Generate slug if not provided
     let finalSlug = slug;
     if (!finalSlug) {
-      finalSlug = name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
+      finalSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
         .trim();
     }
 
@@ -326,9 +323,7 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -443,17 +438,14 @@ export const updateTag = async (req: Request, res: Response): Promise<void> => {
     if (updateData.description !== undefined) sanitizedUpdateData.description = updateData.description?.trim();
     if (updateData.color !== undefined) sanitizedUpdateData.color = updateData.color?.trim();
     if (updateData.metaTitle !== undefined) sanitizedUpdateData.metaTitle = updateData.metaTitle?.trim();
-    if (updateData.metaDescription !== undefined) sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
+    if (updateData.metaDescription !== undefined)
+      sanitizedUpdateData.metaDescription = updateData.metaDescription?.trim();
 
     // Update tag
-    const updatedTag = await TagModel.findByIdAndUpdate(
-      id,
-      sanitizedUpdateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const updatedTag = await TagModel.findByIdAndUpdate(id, sanitizedUpdateData, {
+      new: true,
+      runValidators: true,
+    });
 
     res.json({
       success: true,
@@ -468,9 +460,7 @@ export const updateTag = async (req: Request, res: Response): Promise<void> => {
     };
 
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors || {}).map(
-        (validationErr) => validationErr.message
-      );
+      const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,
         message: "Validation failed",
@@ -677,9 +667,9 @@ export const bulkUpdateTagUsage = async (req: Request, res: Response): Promise<v
     res.json({
       success: true,
       message: `Tag usage ${operation}ed successfully`,
-      data: { 
+      data: {
         modifiedCount: result.modifiedCount,
-        matchedCount: result.matchedCount
+        matchedCount: result.matchedCount,
       },
     });
   } catch (error: unknown) {

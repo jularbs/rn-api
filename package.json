@@ -76,6 +76,9 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "overrides": {
+    "picomatch": "^4.0.0"
+  },
   "author": "",
   "license": "ISC",
   "description": "Radyo Natin API server"

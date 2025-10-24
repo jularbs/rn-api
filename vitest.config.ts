@@ -1,14 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    // This plugin reads path mapping from tsconfig.json
-    tsconfigPaths({
-      projects: ['./tsconfig.json'],
-    }),
-  ],
   test: {
     // Test environment
     environment: 'node',
@@ -47,6 +40,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@/models': path.resolve(__dirname, './src/models'),
+      '@/controllers': path.resolve(__dirname, './src/controllers'),
+      '@/middleware': path.resolve(__dirname, './src/middleware'),
+      '@/routes': path.resolve(__dirname, './src/routes'),
+      '@/config': path.resolve(__dirname, './src/config'),
+      '@/types': path.resolve(__dirname, './src/types'),
+      '@/utils': path.resolve(__dirname, './src/utils'),
     },
   },
 });

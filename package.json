@@ -8,7 +8,6 @@
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register --files src/index.ts",
     "dev:clean": "nodemon --exec ts-node -r tsconfig-paths/register --files --clear src/index.ts",
     "debug": "node --inspect-brk -r ts-node/register -r tsconfig-paths/register src/index.ts",
-    "test": "jest",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "clean": "rimraf dist",

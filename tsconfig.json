@@ -30,12 +30,12 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.js"
+    "src/**/*.js",
+    "src/vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
     "node_modules/**/*.ts",
-    "dist",
-    "**/*.test.ts"
+    "dist"
   ]
 }

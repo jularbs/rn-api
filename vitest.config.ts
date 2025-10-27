@@ -1,14 +1,10 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
-import { config } from "dotenv";
 
 export default defineConfig({
   test: {
     // Test environment
     environment: "node",
-
-    // Env Variables
-    env: config({ path: ".env" }).parsed,
 
     // Setup files
     setupFiles: ["./src/tests/setup/mongoSetup.ts"],

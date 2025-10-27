@@ -12,9 +12,6 @@ on:
       - staging
       - develop
 
-env:
-  JWT_SECRET: 85002afb0b05484d452b3b6a2d7a65a4cf4404c4b59cf0ce508046831b5sge3q
-
 jobs:
   build-and-test:
     name: Build & Test

@@ -10,6 +10,7 @@ describe("Auth Controller", () => {
   let res: Partial<Response>;
   let statusMock: ReturnType<typeof vi.fn>;
   let jsonMock: ReturnType<typeof vi.fn>;
+  process.env.JWT_SECRET = "test_jwt_secret";
 
   beforeEach(async () => {
     // Setup Express mocks

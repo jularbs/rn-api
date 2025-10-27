@@ -36,18 +36,18 @@ export interface IPost {
   isFeatured: boolean;
   metaTitle?: string;
   metaDescription?: string;
-  
+
   // SEO Fields
   keywords?: string;
   canonicalUrl?: string;
-  
+
   // Robots meta
   robotsIndex: boolean;
   robotsFollow: boolean;
   robotsArchive: boolean;
   robotsSnippet: boolean;
   robotsImageIndex: boolean;
-  
+
   // Open Graph
   ogTitle?: string;
   ogDescription?: string;
@@ -57,7 +57,7 @@ export interface IPost {
   ogLocale?: string;
   ogImage?: Types.ObjectId;
   ogImageAlt?: string;
-  
+
   // Twitter Cards
   twitterCard?: string;
   twitterTitle?: string;
@@ -66,7 +66,7 @@ export interface IPost {
   twitterCreator?: string;
   twitterImage?: Types.ObjectId;
   twitterImageAlt?: string;
-  
+
   // Additional SEO
   seoAuthor?: string;
   publisher?: string;
@@ -112,16 +112,16 @@ export interface IPost {
 export class Post implements IPost {
   public _id!: Types.ObjectId;
 
-  @prop({ required: true, trim: true, maxlength: 300 })
+  @prop({ type: String, required: true, trim: true, maxlength: 300 })
   public title!: string;
 
-  @prop({ required: true, unique: true, lowercase: true })
+  @prop({ type: String, required: true, unique: true, lowercase: true })
   public slug!: string;
 
-  @prop({ trim: true, maxlength: 500 })
+  @prop({ type: String, trim: true, maxlength: 500 })
   public excerpt?: string;
 
-  @prop({ required: true })
+  @prop({ type: String, required: true })
   public content!: string;
 
   @prop({ required: true, ref: "User" })
@@ -133,128 +133,128 @@ export class Post implements IPost {
   @prop({ ref: "Tag", type: () => [Types.ObjectId], default: [] })
   public tags!: Types.ObjectId[];
 
-  @prop({ enum: PostType, default: PostType.BASIC_ARTICLE })
+  @prop({ type: String, enum: PostType, default: PostType.BASIC_ARTICLE })
   public type!: PostType;
 
   @prop({ ref: "Media" })
   public featuredImage?: Types.ObjectId;
 
-  @prop({ trim: true, maxlength: 500 })
+  @prop({ type: String, trim: true, maxlength: 500 })
   public featuredImageCaption?: string;
 
   @prop({ ref: "Media" })
   public thumbnailImage?: Types.ObjectId;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public videoSourceUrl?: string;
 
-  @prop({ trim: true, maxlength: 20 })
+  @prop({ type: String, trim: true, maxlength: 20 })
   public videoDuration?: string;
 
-  @prop({ enum: PostStatus, default: PostStatus.DRAFT })
+  @prop({ type: String, enum: PostStatus, default: PostStatus.DRAFT })
   public status!: PostStatus;
 
-  @prop()
+  @prop({ type: Date })
   public publishedAt?: Date;
 
-  @prop({ default: 0, min: 0 })
+  @prop({ type: Number, default: 0, min: 0 })
   public viewCount!: number;
 
-  @prop({ default: false })
+  @prop({ type: Boolean, default: false })
   public isFeatured!: boolean;
 
-  @prop({ trim: true, maxlength: 300 })
+  @prop({ type: String, trim: true, maxlength: 300 })
   public metaTitle?: string;
 
-  @prop({ trim: true, maxlength: 500 })
+  @prop({ type: String, trim: true, maxlength: 500 })
   public metaDescription?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public keywords?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public canonicalUrl?: string;
 
   // Robots meta
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public robotsIndex!: boolean;
 
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public robotsFollow!: boolean;
 
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public robotsArchive!: boolean;
 
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public robotsSnippet!: boolean;
 
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public robotsImageIndex!: boolean;
 
   // Open Graph
-  @prop({ trim: true, maxlength: 300 })
+  @prop({ type: String, trim: true, maxlength: 300 })
   public ogTitle?: string;
 
-  @prop({ trim: true, maxlength: 500 })
+  @prop({ type: String, trim: true, maxlength: 500 })
   public ogDescription?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public ogType?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public ogUrl?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public ogSiteName?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public ogLocale?: string;
 
   @prop({ ref: "Media" })
   public ogImage?: Types.ObjectId;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public ogImageAlt?: string;
 
   // Twitter Cards
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public twitterCard?: string;
 
-  @prop({ trim: true, maxlength: 300 })
+  @prop({ type: String, trim: true, maxlength: 300 })
   public twitterTitle?: string;
 
-  @prop({ trim: true, maxlength: 500 })
+  @prop({ type: String, trim: true, maxlength: 500 })
   public twitterDescription?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public twitterSite?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public twitterCreator?: string;
 
   @prop({ ref: "Media" })
   public twitterImage?: Types.ObjectId;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public twitterImageAlt?: string;
 
   // Additional SEO
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public seoAuthor?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public publisher?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public focusKeyword?: string;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public readingTime?: string;
 
   @prop({ ref: "Media" })
   public metaImage?: Types.ObjectId;
 
-  @prop({ trim: true })
+  @prop({ type: String, trim: true })
   public metaImageAlt?: string;
 
   public createdAt!: Date;
@@ -317,8 +317,6 @@ export class Post implements IPost {
       .populate("author categories tags featuredImage thumbnailImage");
   }
 
-
-
   // Static method to get post statistics
   public static async getPostStats() {
     const stats = await PostModel.aggregate([
@@ -367,10 +365,7 @@ export class Post implements IPost {
       {
         $addFields: {
           trendingScore: {
-            $add: [
-              { $multiply: ["$viewCount", 1] },
-              { $cond: ["$isFeatured", 10, 0] },
-            ],
+            $add: [{ $multiply: ["$viewCount", 1] }, { $cond: ["$isFeatured", 10, 0] }],
           },
         },
       },

@@ -37,6 +37,7 @@ export interface IMedia {
 })
 export class Media {
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [255, "Original name cannot exceed 255 characters"],
@@ -44,6 +45,7 @@ export class Media {
   public originalName!: string;
 
   @prop({
+    type: String,
     required: true,
     unique: true,
     trim: true,
@@ -53,6 +55,7 @@ export class Media {
   public key!: string;
 
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [63, "S3 bucket name cannot exceed 63 characters"],
@@ -61,12 +64,14 @@ export class Media {
   public bucket!: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [1024, "URL cannot exceed 1024 characters"],
   })
   public url?: string;
 
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [127, "MIME type cannot exceed 127 characters"],
@@ -75,18 +80,21 @@ export class Media {
   public mimeType!: string;
 
   @prop({
+    type: Number,
     required: true,
     min: [0, "File size cannot be negative"],
   })
   public size!: number;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [255, "Alt text cannot exceed 255 characters"],
   })
   public alt?: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [500, "Caption cannot exceed 500 characters"],
   })

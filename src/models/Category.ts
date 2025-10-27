@@ -44,6 +44,7 @@ export interface ICategory {
 })
 export class Category {
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [100, "Category name cannot exceed 100 characters"],
@@ -52,6 +53,7 @@ export class Category {
   public name!: string;
 
   @prop({
+    type: String,
     unique: true,
     lowercase: true,
     trim: true,
@@ -61,18 +63,21 @@ export class Category {
   public slug!: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [500, "Description cannot exceed 500 characters"],
   })
   public description?: string;
 
   @prop({
+    type: Boolean,
     default: true,
     index: true
   })
   public isActive!: boolean;
 
   @prop({
+    type: Number,
     default: 0,
     min: [0, "Sort order cannot be negative"],
     index: true
@@ -80,12 +85,14 @@ export class Category {
   public sortOrder!: number;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [60, "Meta title cannot exceed 60 characters"],
   })
   public metaTitle?: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [160, "Meta description cannot exceed 160 characters"],
   })

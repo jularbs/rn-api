@@ -72,13 +72,15 @@ export interface IUser {
 })
 export class User {
   @prop({
-    required: true,
+    type: String,
+    required: [true, "Full name is required"],
     trim: true,
     maxlength: [100, "Full name cannot exceed 100 characters"],
   })
   public fullName!: string;
 
   @prop({
+    type: String,
     required: true,
     unique: true,
     lowercase: true,
@@ -87,6 +89,7 @@ export class User {
   public email!: string;
 
   @prop({
+    type: String,
     required: true,
     minlength: [6, "Password must be at least 6 characters long"],
     select: false,
@@ -94,43 +97,41 @@ export class User {
   public password!: string;
 
   @prop({
+    type: String,
     enum: ["admin", "manager", "managing-editor", "digital-content-producer"],
     default: "digital-content-producer",
   })
   public role!: "admin" | "manager" | "managing-editor" | "digital-content-producer";
 
-  @prop({ default: null })
+  @prop({ type: Date, default: null })
   public deletedAt?: Date;
 
   @prop({ ref: () => User, default: null })
   public deletedBy?: Ref<User>;
 
-  @prop({ default: null })
+  @prop({ type: Date, default: null })
   public lastLogin?: Date;
 
-  @prop({ default: false })
+  @prop({ type: Boolean, default: false })
   public accountVerified!: boolean;
 
-  @prop({ default: false })
+  @prop({ type: Boolean, default: false })
   public emailVerified!: boolean;
 
-  @prop({ select: false })
+  @prop({ type: String, select: false })
   public emailVerificationToken?: string;
 
-  @prop({ select: false })
+  @prop({ type: String, select: false })
   public passwordResetToken?: string;
 
-  @prop({ select: false })
+  @prop({ type: Date, select: false })
   public passwordResetExpires?: Date;
 
   public createdAt!: Date;
   public updatedAt!: Date;
 
   // Instance method to check password
-  public async comparePassword(
-    this: DocumentType<User>,
-    candidatePassword: string
-  ): Promise<boolean> {
+  public async comparePassword(this: DocumentType<User>, candidatePassword: string): Promise<boolean> {
     return await bcrypt.compare(candidatePassword, this.password);
   }
 
@@ -138,9 +139,7 @@ export class User {
   public createPasswordResetToken(this: DocumentType<User>): string {
     const resetToken = randomBytes(32).toString("hex");
 
-    this.passwordResetToken = createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    this.passwordResetToken = createHash("sha256").update(resetToken).digest("hex");
 
     this.passwordResetExpires = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
 
@@ -148,10 +147,7 @@ export class User {
   }
 
   // Instance method for soft delete
-  public async softDelete(
-    this: DocumentType<User>,
-    deletedBy?: Types.ObjectId
-  ): Promise<DocumentType<User>> {
+  public async softDelete(this: DocumentType<User>, deletedBy?: Types.ObjectId): Promise<DocumentType<User>> {
     this.deletedAt = new Date();
     if (deletedBy) {
       this.deletedBy = deletedBy;

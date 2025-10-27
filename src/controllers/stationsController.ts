@@ -5,9 +5,7 @@ import { s3Helper } from "@/utils/s3Helper";
 import { Types } from "mongoose";
 import formidable from "formidable";
 import fs from "fs";
-
-// Import firstValues helper from formidable
-const { firstValues } = require("formidable/src/helpers/firstValues.js");
+import { firstValues } from "@/utils/formidableFirstValues";
 
 // GET /api/stations - Get all stations
 export const getAllStations = async (req: Request, res: Response): Promise<void> => {
@@ -26,7 +24,11 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
     }
 
     if (search && typeof search === "string") {
-      filter.$or = [{ name: { $regex: search, $options: "i" } }, { frequency: { $regex: search, $options: "i" } }, { address: { $regex: search, $options: "i" } }];
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { frequency: { $regex: search, $options: "i" } },
+        { address: { $regex: search, $options: "i" } },
+      ];
     }
 
     // Pagination
@@ -155,7 +157,19 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
 
     // Extract form fields using firstValues helper
     const formData = firstValues(form, fields);
-    const { name, slug, frequency, address, locationGroup, contactNumber, email, mapEmbedCode, audioStreamURL, videoStreamURL, status = "active" } = formData;
+    const {
+      name,
+      slug,
+      frequency,
+      address,
+      locationGroup,
+      contactNumber,
+      email,
+      mapEmbedCode,
+      audioStreamURL,
+      videoStreamURL,
+      status = "active",
+    } = formData;
 
     // Validate required fields
     if (!name || !frequency || !locationGroup) {
@@ -189,6 +203,15 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
         // Read file buffer
         const fileBuffer = await fs.promises.readFile(file.filepath);
 
+        //Validate if file is image
+        const mimeType = file.mimetype || "";
+        if (!mimeType.startsWith("image/")) {
+          res.status(400).json({
+            success: false,
+            message: "Uploaded image is not a valid image type.",
+          });
+          return;
+        }
         // Upload to S3 and compress
         const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
           folder: "stations/logos",
@@ -252,6 +275,7 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
       data: { station },
     });
   } catch (error: unknown) {
+    console.log("Create station error caught:", error);
     const err = error as Error & {
       name?: string;
       code?: number;
@@ -322,7 +346,19 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
 
     // Extract form fields using firstValues helper
     const formData = firstValues(form, fields);
-    const { name, slug, frequency, address, locationGroup, contactNumber, email, mapEmbedCode, audioStreamURL, videoStreamURL, status } = formData;
+    const {
+      name,
+      slug,
+      frequency,
+      address,
+      locationGroup,
+      contactNumber,
+      email,
+      mapEmbedCode,
+      audioStreamURL,
+      videoStreamURL,
+      status,
+    } = formData;
 
     // If slug is being updated, check for uniqueness
     if (slug && slug !== existingStation.slug) {
@@ -351,6 +387,16 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
 
         // Read file buffer
         const fileBuffer = await fs.promises.readFile(file.filepath);
+
+        //Validate if file is image
+        const mimeType = file.mimetype || "";
+        if (!mimeType.startsWith("image/")) {
+          res.status(400).json({
+            success: false,
+            message: "Uploaded image is not a valid image type.",
+          });
+          return;
+        }
 
         // Upload new logo to S3 and compress
         const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
@@ -400,7 +446,8 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
     if (slug !== undefined) sanitizedUpdateData.slug = slug?.toLowerCase().trim();
     if (frequency !== undefined) sanitizedUpdateData.frequency = frequency?.trim();
     if (address !== undefined) sanitizedUpdateData.address = address?.trim();
-    if (locationGroup !== undefined) sanitizedUpdateData.locationGroup = locationGroup as "luzon" | "visayas" | "mindanao";
+    if (locationGroup !== undefined)
+      sanitizedUpdateData.locationGroup = locationGroup as "luzon" | "visayas" | "mindanao";
     if (contactNumber !== undefined) sanitizedUpdateData.contactNumber = contactNumber?.trim();
     if (email !== undefined) sanitizedUpdateData.email = email?.trim().toLowerCase();
     if (mapEmbedCode !== undefined) sanitizedUpdateData.mapEmbedCode = mapEmbedCode?.trim();

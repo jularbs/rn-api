@@ -45,6 +45,7 @@ export interface IStation {
 })
 export class Station {
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [100, "Station name cannot exceed 100 characters"],
@@ -52,6 +53,7 @@ export class Station {
   public name!: string;
 
   @prop({
+    type: String,
     unique: true,
     lowercase: true,
     require: true,
@@ -59,6 +61,7 @@ export class Station {
   public slug!: string;
 
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [10, "Frequency cannot exceed 10 characters"],
@@ -66,12 +69,14 @@ export class Station {
   public frequency!: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [200, "Address cannot exceed 200 characters"],
   })
   public address?: string;
 
   @prop({
+    type: String,
     required: true,
     enum: {
       values: ["luzon", "visayas", "mindanao"],
@@ -84,12 +89,14 @@ export class Station {
   public logoImage?: Types.ObjectId;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [100, "Contact number cannot exceed 100 characters"],
   })
   public contactNumber?: string;
 
   @prop({
+    type: String,
     trim: true,
     lowercase: true,
     validate: [validator.isEmail, "Please provide a valid email address"],
@@ -97,23 +104,27 @@ export class Station {
   public email?: string;
 
   @prop({
+    type: String,
     trim: true,
   })
   public mapEmbedCode?: string;
 
   @prop({
+    type: String,
     trim: true,
     validate: [validator.isURL, "Please provide a valid URL for the audio stream"],
   })
   public audioStreamURL?: string;
 
   @prop({
+    type: String,
     trim: true,
     validate: [validator.isURL, "Please provide a valid URL for the video stream"],
   })
   public videoStreamURL?: string;
 
   @prop({
+    type: String,
     required: true,
     enum: {
       values: ["active", "inactive"],

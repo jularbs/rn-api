@@ -6,6 +6,9 @@ export default defineConfig({
     // Test environment
     environment: 'node',
     
+    // Setup files
+    setupFiles: ['./src/tests/setup/mongoSetup.ts'],
+    
     // File patterns
     include: ['src/**/*.{test,spec}.{js,ts}'],
     exclude: ['node_modules', 'dist'],

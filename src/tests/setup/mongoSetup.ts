@@ -13,7 +13,7 @@ beforeAll(async () => {
     // Use MongoDB 4.4.x which doesn't require AVX instructions
     mongo = await MongoMemoryServer.create({
       binary: {
-        version: '4.4.29', // Specific version that doesn't require AVX
+        version: '4.4.28', // Specific version that doesn't require AVX
       },
       instance: {
         port: 0, // Use random available port

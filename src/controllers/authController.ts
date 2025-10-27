@@ -49,7 +49,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     };
 
     if (err.name === "ValidationError") {
-      console.log(err);
       const errors = Object.values(err.errors || {}).map((validationErr) => validationErr.message);
       res.status(400).json({
         success: false,

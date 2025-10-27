@@ -1,11 +1,4 @@
-import {
-  prop,
-  pre,
-  index,
-  modelOptions,
-  getModelForClass,
-  DocumentType,
-} from "@typegoose/typegoose";
+import { prop, pre, index, modelOptions, getModelForClass, DocumentType } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import * as bcrypt from "bcryptjs";
 import { randomBytes, createHash } from "crypto";
@@ -50,6 +43,10 @@ export interface IUser {
 })
 /* eslint-disable-next-line */
 @pre<User>(/^find/, function (this: any) {
+  // Skip filtering if includeDeleted option is set
+  if (this.getOptions().includeDeleted) {
+    return;
+  }
   // Automatically filter out soft-deleted users for all find operations
   this.where({ deletedAt: null });
 })
@@ -168,12 +165,12 @@ export class User {
 
   // Static method to find deleted users
   public static findDeleted() {
-    return UserModel.find({ deletedAt: { $ne: null } });
+    return UserModel.find({ deletedAt: { $ne: null } }).setOptions({ includeDeleted: true });
   }
 
   // Static method to find with deleted users included
   public static findWithDeleted() {
-    return UserModel.find({});
+    return UserModel.find({}).setOptions({ includeDeleted: true });
   }
 
   // Static method to restore user by ID

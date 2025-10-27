@@ -6,7 +6,7 @@ import formidable from "formidable";
 import fs from "fs";
 import s3Helper from "@/utils/s3Helper";
 import { MediaModel } from "@/models/Media";
-const { firstValues } = require("formidable/src/helpers/firstValues.js");
+import { firstValues } from "@/utils/formidableFirstValues";
 
 // GET /api/hosts - Get all hosts with filtering and pagination
 export const getAllHosts = async (req: Request, res: Response): Promise<void> => {
@@ -39,6 +39,7 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
 
     // Get hosts with pagination
     const hosts = await HostModel.find(filter)
+      .lean()
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum)
@@ -88,6 +89,7 @@ export const getHostById = async (req: Request, res: Response): Promise<void> =>
     }
 
     const host = await HostModel.findById(id)
+      .lean()
       .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
@@ -124,6 +126,7 @@ export const getHostBySlug = async (req: Request, res: Response): Promise<void> 
       slug: slug.toLowerCase(),
       isActive: true,
     })
+      .lean()
       .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
@@ -293,6 +296,7 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
       data: host,
     });
   } catch (error: unknown) {
+    console.log("error on create host: ", error);
     const err = error as Error & {
       name?: string;
       code?: number;

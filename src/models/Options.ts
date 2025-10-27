@@ -1,5 +1,7 @@
-import { prop, getModelForClass, modelOptions, index } from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions } from "@typegoose/typegoose";
 import { Types } from "mongoose";
+import { User } from "./User";
+import { Media } from "./Media";
 
 // Interface for Options
 export interface IOptions {
@@ -12,8 +14,6 @@ export interface IOptions {
   updatedAt: Date;
 }
 
-@index({ updatedBy: 1 })
-@index({ createdAt: -1 })
 @modelOptions({
   schemaOptions: {
     timestamps: true,
@@ -23,16 +23,16 @@ export interface IOptions {
   },
 })
 export class Options {
-  @prop({ required: true, unique: true, trim: true, maxlength: 200 })
+  @prop({ type: String, required: true, unique: true, trim: true, index: true, maxlength: 200 })
   public key!: string;
 
-  @prop({ required: true, trim: true })
+  @prop({ type: String, required: true, trim: true })
   public value!: string;
 
-  @prop({ required: true, ref: "User" })
+  @prop({ required: true, ref: () => User })
   public updatedBy!: Types.ObjectId;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public media?: Types.ObjectId;
 
   public createdAt!: Date;

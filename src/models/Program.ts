@@ -1,6 +1,8 @@
-import { prop, getModelForClass, modelOptions, index, pre, DocumentType, Ref } from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, pre, DocumentType } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
+import { Station } from "./Station";
+import { Media } from "./Media";
 
 export interface IProgram {
   _id: Types.ObjectId;
@@ -11,9 +13,9 @@ export interface IProgram {
   startTime: string;
   endTime: string;
   duration: number; // in minutes
-  station: Ref<Types.ObjectId>; // Reference to Station model
+  station: Types.ObjectId; // Reference to Station model
   isActive: boolean;
-  image?: Ref<Types.ObjectId>; // Reference to Media model
+  image?: Types.ObjectId; // Reference to Media model
   createdAt: Date;
   updatedAt: Date;
 
@@ -46,11 +48,6 @@ export interface IProgram {
     this.duration = duration;
   }
 })
-@index({ name: 1 })
-@index({ day: 1 })
-@index({ startTime: 1 })
-@index({ station: 1 })
-@index({ isActive: 1 })
 @index({ createdAt: -1 })
 @index({ day: 1, startTime: 1 }) // Compound index for schedule queries
 @modelOptions({
@@ -63,6 +60,7 @@ export interface IProgram {
 })
 export class Program {
   @prop({
+    type: String,
     required: true,
     trim: true,
     index: true,
@@ -70,6 +68,7 @@ export class Program {
   public name!: string;
 
   @prop({
+    type: String,
     unique: true,
     lowercase: true,
     trim: true,
@@ -78,6 +77,7 @@ export class Program {
   public slug!: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [1000, "Description cannot exceed 1000 characters"],
   })
@@ -97,6 +97,7 @@ export class Program {
   public day!: number[];
 
   @prop({
+    type: String,
     required: true,
     match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format (24-hour)"],
     index: true,
@@ -104,34 +105,37 @@ export class Program {
   public startTime!: string;
 
   @prop({
+    type: String,
     required: true,
     match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format (24-hour)"],
   })
   public endTime!: string;
 
   @prop({
+    type: Number,
     min: [1, "Duration must be at least 1 minute"],
     max: [1440, "Duration cannot exceed 24 hours (1440 minutes)"],
   })
   public duration!: number;
 
   @prop({
-    ref: "Station",
+    ref: () => Station,
     required: true,
     index: true,
   })
-  public station!: Ref<Types.ObjectId>;
+  public station!: Types.ObjectId;
 
   @prop({
+    type: Boolean,
     default: true,
     index: true,
   })
   public isActive!: boolean;
 
   @prop({
-    ref: "Media",
+    ref: () => Media,
   })
-  public image?: Ref<Types.ObjectId>;
+  public image?: Types.ObjectId;
 
   public createdAt!: Date;
   public updatedAt!: Date;

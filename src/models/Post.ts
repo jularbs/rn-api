@@ -1,6 +1,10 @@
 import { prop, getModelForClass, modelOptions, index, pre } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
+import { Category } from "./Category";
+import { Tag } from "./Tag";
+import { Media } from "./Media";
+import { User } from "./User";
 
 // Enum for post status
 export enum PostStatus {
@@ -124,25 +128,25 @@ export class Post implements IPost {
   @prop({ type: String, required: true })
   public content!: string;
 
-  @prop({ required: true, ref: "User" })
+  @prop({ required: true, ref: () => User })
   public author!: Types.ObjectId;
 
-  @prop({ ref: "Category", type: () => [Types.ObjectId], default: [] })
+  @prop({ ref: () => Category, type: () => [Types.ObjectId], default: [] })
   public categories!: Types.ObjectId[];
 
-  @prop({ ref: "Tag", type: () => [Types.ObjectId], default: [] })
+  @prop({ ref: () => Tag, type: () => [Types.ObjectId], default: [] })
   public tags!: Types.ObjectId[];
 
   @prop({ type: String, enum: PostType, default: PostType.BASIC_ARTICLE })
   public type!: PostType;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public featuredImage?: Types.ObjectId;
 
   @prop({ type: String, trim: true, maxlength: 500 })
   public featuredImageCaption?: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public thumbnailImage?: Types.ObjectId;
 
   @prop({ type: String, trim: true })
@@ -210,7 +214,7 @@ export class Post implements IPost {
   @prop({ type: String, trim: true })
   public ogLocale?: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public ogImage?: Types.ObjectId;
 
   @prop({ type: String, trim: true })
@@ -232,7 +236,7 @@ export class Post implements IPost {
   @prop({ type: String, trim: true })
   public twitterCreator?: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public twitterImage?: Types.ObjectId;
 
   @prop({ type: String, trim: true })
@@ -251,7 +255,7 @@ export class Post implements IPost {
   @prop({ type: String, trim: true })
   public readingTime?: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public metaImage?: Types.ObjectId;
 
   @prop({ type: String, trim: true })

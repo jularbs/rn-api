@@ -1,6 +1,8 @@
-import { prop, getModelForClass, modelOptions, index, pre, Severity } from '@typegoose/typegoose';
-import { Types } from 'mongoose';
-import slugify from 'slugify';
+import { prop, getModelForClass, modelOptions, index, pre, Severity } from "@typegoose/typegoose";
+import { Types } from "mongoose";
+import slugify from "slugify";
+import { Program } from "./Program";
+import { Media } from "./Media";
 
 // Interface for Host
 export interface IHost {
@@ -32,7 +34,6 @@ export interface IHost {
   }
 })
 @index({ name: 1 })
-@index({ isActive: 1 })
 @index({ programs: 1 })
 @modelOptions({
   schemaOptions: {
@@ -40,28 +41,27 @@ export interface IHost {
     id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-    
   },
   options: {
-    allowMixed: Severity.ALLOW
-  }
+    allowMixed: Severity.ALLOW,
+  },
 })
 export class Host {
   public _id!: Types.ObjectId;
 
-  @prop({ required: true, trim: true, maxlength: 200 })
+  @prop({ type: String, required: true, trim: true, maxlength: 200 })
   public name!: string;
 
-  @prop({ required: true, unique: true, lowercase: true })
+  @prop({ type: String, required: true, unique: true, lowercase: true })
   public slug!: string;
 
-  @prop({ trim: true, maxlength: 2000 })
+  @prop({ type: String, trim: true, maxlength: 2000 })
   public bio?: string;
 
-  @prop({ trim: true, lowercase: true })
+  @prop({ type: String, trim: true, lowercase: true })
   public email?: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public image?: Types.ObjectId;
 
   @prop({ type: () => Object, allowMixed: Severity.ALLOW })
@@ -72,10 +72,10 @@ export class Host {
     tiktok?: string;
   };
 
-  @prop({ default: true })
+  @prop({ type: Boolean, default: true })
   public isActive!: boolean;
 
-  @prop({ ref: "Program", type: () => [Types.ObjectId], default: [] })
+  @prop({ ref: () => Program, type: () => [Types.ObjectId], default: [] })
   public programs!: Types.ObjectId[];
 
   public createdAt!: Date;

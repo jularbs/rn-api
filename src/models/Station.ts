@@ -2,6 +2,7 @@ import { prop, getModelForClass, modelOptions, index, DocumentType, pre } from "
 import { Types } from "mongoose";
 import slugify from "slugify";
 import validator from "validator";
+import { Media } from "./Media";
 
 export interface IStation {
   _id: Types.ObjectId;
@@ -85,7 +86,7 @@ export class Station {
   })
   public locationGroup!: "luzon" | "visayas" | "mindanao";
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public logoImage?: Types.ObjectId;
 
   @prop({

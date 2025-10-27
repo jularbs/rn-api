@@ -1,6 +1,7 @@
 import { prop, getModelForClass, modelOptions, index, pre } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
+import { Media } from "./Media";
 
 // Enum for banner visibility
 export enum BannerVisibility {
@@ -57,13 +58,13 @@ export class TopBanner implements ITopBanner {
   @prop({ required: true, unique: true, lowercase: true })
   public slug!: string;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public desktopBanner?: Types.ObjectId;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public tabletBanner?: Types.ObjectId;
 
-  @prop({ ref: "Media" })
+  @prop({ ref: () => Media })
   public mobileBanner?: Types.ObjectId;
 
   @prop({ required: true })

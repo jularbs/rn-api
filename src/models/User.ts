@@ -5,7 +5,6 @@ import {
   modelOptions,
   getModelForClass,
   DocumentType,
-  Ref,
 } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import * as bcrypt from "bcryptjs";
@@ -19,7 +18,7 @@ export interface IUser {
   password?: string;
   role: "admin" | "manager" | "managing-editor" | "digital-content-producer";
   deletedAt?: Date;
-  deletedBy?: Ref<User>;
+  deletedBy?: Types.ObjectId;
   lastLogin?: Date;
   accountVerified: boolean;
   emailVerified: boolean;
@@ -107,7 +106,7 @@ export class User {
   public deletedAt?: Date;
 
   @prop({ ref: () => User, default: null })
-  public deletedBy?: Ref<User>;
+  public deletedBy?: Types.ObjectId;
 
   @prop({ type: Date, default: null })
   public lastLogin?: Date;

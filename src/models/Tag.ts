@@ -1,11 +1,4 @@
-import {
-  prop,
-  getModelForClass,
-  modelOptions,
-  index,
-  pre,
-  DocumentType
-} from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, pre, DocumentType } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
 
@@ -30,11 +23,10 @@ export interface ITag {
     this.slug = slugify(this.name, {
       lower: true,
       strict: true,
-      remove: /[*+~.()'"!:@]/g
+      remove: /[*+~.()'"!:@]/g,
     });
   }
 })
-
 @index({ usageCount: -1 })
 @index({ createdAt: -1 })
 @modelOptions({
@@ -47,42 +39,48 @@ export interface ITag {
 })
 export class Tag {
   @prop({
+    type: String,
     required: true,
     trim: true,
     maxlength: [50, "Tag name cannot exceed 50 characters"],
-    index: true
+    index: true,
   })
   public name!: string;
 
   @prop({
+    type: String,
     unique: true,
     lowercase: true,
     trim: true,
     maxlength: [60, "Slug cannot exceed 60 characters"],
-    index: true
+    index: true,
   })
   public slug!: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [200, "Description cannot exceed 200 characters"],
   })
   public description?: string;
 
   @prop({
+    type: Number,
     default: 0,
     min: [0, "Usage count cannot be negative"],
-    index: true
+    index: true,
   })
   public usageCount!: number;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [60, "Meta title cannot exceed 60 characters"],
   })
   public metaTitle?: string;
 
   @prop({
+    type: String,
     trim: true,
     maxlength: [160, "Meta description cannot exceed 160 characters"],
   })
@@ -128,8 +126,7 @@ export class Tag {
 
   // Static method to find popular tags (high usage)
   public static findPopular(limit: number = 10) {
-    return TagModel
-      .find({ usageCount: { $gte: 10 } })
+    return TagModel.find({ usageCount: { $gte: 10 } })
       .sort({ usageCount: -1 })
       .limit(limit);
   }
@@ -138,11 +135,10 @@ export class Tag {
   public static findTrending(days: number = 30, limit: number = 10) {
     const dateThreshold = new Date();
     dateThreshold.setDate(dateThreshold.getDate() - days);
-    
-    return TagModel
-      .find({ 
-        updatedAt: { $gte: dateThreshold }
-      })
+
+    return TagModel.find({
+      updatedAt: { $gte: dateThreshold },
+    })
       .sort({ usageCount: -1, updatedAt: -1 })
       .limit(limit);
   }
@@ -154,33 +150,29 @@ export class Tag {
 
   // Static method to find tags by usage range
   public static findByUsageRange(min: number, max?: number) {
-    const filter: Record<string, unknown> = { 
-      usageCount: { $gte: min }
+    const filter: Record<string, unknown> = {
+      usageCount: { $gte: min },
     };
-    
+
     if (max !== undefined) {
       filter.usageCount = { $gte: min, $lte: max };
     }
-    
+
     return TagModel.find(filter).sort({ usageCount: -1 });
   }
 
   // Static method to search tags by name
   public static search(query: string) {
     return TagModel.find({
-      $or: [
-        { name: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } }
-      ]
+      $or: [{ name: { $regex: query, $options: "i" } }, { description: { $regex: query, $options: "i" } }],
     });
   }
 
   // Static method to get tags with similar names
   public static findSimilar(name: string, limit: number = 5) {
-    return TagModel
-      .find({
-        name: { $regex: name, $options: 'i' }
-      })
+    return TagModel.find({
+      name: { $regex: name, $options: "i" },
+    })
       .limit(limit)
       .sort({ usageCount: -1 });
   }
@@ -192,21 +184,23 @@ export class Tag {
         $group: {
           _id: null,
           totalTags: { $sum: 1 },
-          totalUsage: { $sum: '$usageCount' },
-          avgUsage: { $avg: '$usageCount' },
-          maxUsage: { $max: '$usageCount' },
-          minUsage: { $min: '$usageCount' }
-        }
-      }
+          totalUsage: { $sum: "$usageCount" },
+          avgUsage: { $avg: "$usageCount" },
+          maxUsage: { $max: "$usageCount" },
+          minUsage: { $min: "$usageCount" },
+        },
+      },
     ]);
 
-    return stats[0] || {
-      totalTags: 0,
-      totalUsage: 0,
-      avgUsage: 0,
-      maxUsage: 0,
-      minUsage: 0
-    };
+    return (
+      stats[0] || {
+        totalTags: 0,
+        totalUsage: 0,
+        avgUsage: 0,
+        maxUsage: 0,
+        minUsage: 0,
+      }
+    );
   }
 
   // Static method to get usage distribution
@@ -214,15 +208,15 @@ export class Tag {
     return TagModel.aggregate([
       {
         $bucket: {
-          groupBy: '$usageCount',
+          groupBy: "$usageCount",
           boundaries: [0, 1, 5, 10, 25, 50, 100, Infinity],
-          default: 'Other',
+          default: "Other",
           output: {
             count: { $sum: 1 },
-            tags: { $push: '$name' }
-          }
-        }
-      }
+            tags: { $push: "$name" },
+          },
+        },
+      },
     ]);
   }
 
@@ -230,51 +224,45 @@ export class Tag {
   public static async cleanupUnused(daysThreshold: number = 90) {
     const dateThreshold = new Date();
     dateThreshold.setDate(dateThreshold.getDate() - daysThreshold);
-    
+
     return TagModel.deleteMany({
       usageCount: 0,
-      createdAt: { $lt: dateThreshold }
+      createdAt: { $lt: dateThreshold },
     });
   }
 
   // Static method to bulk increment usage for multiple tags
   public static async bulkIncrementUsage(tagIds: (string | Types.ObjectId)[]) {
-    return TagModel.updateMany(
-      { _id: { $in: tagIds } },
-      { $inc: { usageCount: 1 } }
-    );
+    return TagModel.updateMany({ _id: { $in: tagIds } }, { $inc: { usageCount: 1 } });
   }
 
   // Static method to bulk decrement usage for multiple tags
   public static async bulkDecrementUsage(tagIds: (string | Types.ObjectId)[]) {
-    return TagModel.updateMany(
-      { _id: { $in: tagIds }, usageCount: { $gt: 0 } },
-      { $inc: { usageCount: -1 } }
-    );
+    return TagModel.updateMany({ _id: { $in: tagIds }, usageCount: { $gt: 0 } }, { $inc: { usageCount: -1 } });
   }
 
   // Static method to find or create tags by names
   public static async findOrCreateByNames(names: string[]): Promise<DocumentType<Tag>[]> {
     const tags: DocumentType<Tag>[] = [];
-    
+
     for (const name of names) {
       let tag = await TagModel.findOne({ name: name.trim() });
-      
+
       if (!tag) {
         tag = new TagModel({
           name: name.trim(),
           slug: slugify(name.trim(), {
             lower: true,
             strict: true,
-            remove: /[*+~.()'"!:@]/g
-          })
+            remove: /[*+~.()'"!:@]/g,
+          }),
         });
         await tag.save();
       }
-      
+
       tags.push(tag);
     }
-    
+
     return tags;
   }
 }

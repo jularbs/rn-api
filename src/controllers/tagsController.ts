@@ -6,16 +6,7 @@ import { Types } from "mongoose";
 // GET /api/tags - Get all tags with filtering and pagination
 export const getAllTags = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
-      page = "1",
-      limit = "10",
-      search,
-      sortBy = "name",
-      sortOrder = "asc",
-      minUsage,
-      maxUsage,
-      id,
-    } = req.query;
+    const { page = "1", limit = "10", search, sortBy = "name", sortOrder = "asc", minUsage, maxUsage, id } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -53,7 +44,7 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
     }
 
     //filter IDs
-    if(id && typeof id === "string" && JSON.parse(id).length > 0) {
+    if (id && typeof id === "string" && JSON.parse(id).length > 0) {
       filter.$and = [
         {
           _id: {
@@ -83,7 +74,7 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
 
     res.json({
       success: true,
-      message: "Tags retrieved successfully",
+      message: "Tags fetched successfully",
       data: tags,
       pagination: {
         currentPage: pageNum,
@@ -116,7 +107,7 @@ export const getPopularTags = async (req: Request, res: Response): Promise<void>
     res.json({
       success: true,
       message: "Popular tags retrieved successfully",
-      data: { tags },
+      data: tags,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -141,7 +132,7 @@ export const getTrendingTags = async (req: Request, res: Response): Promise<void
     res.json({
       success: true,
       message: "Trending tags retrieved successfully",
-      data: { tags },
+      data: tags,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -206,7 +197,7 @@ export const getTagById = async (req: Request, res: Response): Promise<void> => 
     res.json({
       success: true,
       message: "Tag retrieved successfully",
-      data: { tag },
+      data: tag,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -239,7 +230,7 @@ export const getTagBySlug = async (req: Request, res: Response): Promise<void> =
     res.json({
       success: true,
       message: "Tag retrieved successfully",
-      data: { tag },
+      data: tag,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -367,7 +358,7 @@ export const createTagsBatch = async (req: Request, res: Response): Promise<void
     res.status(201).json({
       success: true,
       message: "Tags created/found successfully",
-      data: { tags },
+      data: tags,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -450,7 +441,7 @@ export const updateTag = async (req: Request, res: Response): Promise<void> => {
     res.json({
       success: true,
       message: "Tag updated successfully",
-      data: { tag: updatedTag },
+      data: updatedTag,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -527,7 +518,7 @@ export const deleteTag = async (req: Request, res: Response): Promise<void> => {
     res.json({
       success: true,
       message: "Tag deleted successfully",
-      data: { tag: deletedTag },
+      data: deletedTag,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -570,7 +561,7 @@ export const incrementTagUsage = async (req: Request, res: Response): Promise<vo
     res.json({
       success: true,
       message: "Tag usage incremented successfully",
-      data: { tag: updatedTag },
+      data: updatedTag,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -612,7 +603,7 @@ export const decrementTagUsage = async (req: Request, res: Response): Promise<vo
     res.json({
       success: true,
       message: "Tag usage decremented successfully",
-      data: { tag: updatedTag },
+      data: updatedTag,
     });
   } catch (error: unknown) {
     const err = error as Error;

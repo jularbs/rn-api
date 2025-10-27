@@ -139,7 +139,7 @@ describe("Auth Controller", () => {
         email: newUserData.email,
         password: newUserData.password,
       };
-      process.env.JWT_SECRET = "test_jwt_secret";
+      
       const { login } = await import("@/controllers/authController");
       await login(req as Request, res as Response);
       expect(statusMock).toHaveBeenCalledWith(200);
@@ -177,7 +177,7 @@ describe("Auth Controller", () => {
         email: unverifiedUserData.email,
         password: unverifiedUserData.password,
       };
-      process.env.JWT_SECRET = "test_jwt_secret";
+      
       const { login } = await import("@/controllers/authController");
       await login(req as Request, res as Response);
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -215,7 +215,7 @@ describe("Auth Controller", () => {
         email: userData.email,
         password: "wrongPassword",
       };
-      process.env.JWT_SECRET = "test_jwt_secret";
+      
       const { login } = await import("@/controllers/authController");
       await login(req as Request, res as Response);
       expect(statusMock).toHaveBeenCalledWith(401);

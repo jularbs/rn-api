@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
+import slugify from "slugify";
 
 // Validate AWS configuration on startup
 if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -88,7 +89,7 @@ export class S3Helper {
       if (isImage) {
         // Check if the image is PNG to preserve transparency
         const isPNG = fileExtension.toLowerCase() === ".png";
-        
+
         const compressionResult = isPNG
           ? await this.compressToPNG(fileBuffer, {
               quality,
@@ -108,7 +109,11 @@ export class S3Helper {
 
         const extension = isPNG ? ".png" : ".jpeg";
         const mimeType = isPNG ? "image/png" : "image/jpeg";
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}${extension}`;
+        const key = `${prefix}${folder}/${uniqueId}-${slugify(baseName, {
+          lower: true,
+          strict: true,
+          trim: true,
+        })}${extension}`;
         const url = await this.uploadToS3(compressionResult.buffer, key, bucket, mimeType);
 
         result.key = key;
@@ -128,7 +133,11 @@ export class S3Helper {
           );
         }
       } else {
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}${fileExtension}`;
+        const key = `${prefix}${folder}/${uniqueId}-${slugify(baseName, {
+          lower: true,
+          strict: true,
+          trim: true,
+        })}${fileExtension}`;
         const url = await this.uploadToS3(fileBuffer, key, bucket, result.mimeType);
 
         result.key = key;
@@ -244,7 +253,7 @@ export class S3Helper {
     try {
       await s3Client.send(command);
       return true;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return false;
     }

@@ -86,29 +86,40 @@ export class S3Helper {
 
     try {
       if (isImage) {
-        const compressionResult = await this.compressToJPEG(fileBuffer, {
-          quality,
-          maxWidth,
-          maxHeight,
-        });
+        // Check if the image is PNG to preserve transparency
+        const isPNG = fileExtension.toLowerCase() === ".png";
+        
+        const compressionResult = isPNG
+          ? await this.compressToPNG(fileBuffer, {
+              quality,
+              maxWidth,
+              maxHeight,
+            })
+          : await this.compressToJPEG(fileBuffer, {
+              quality,
+              maxWidth,
+              maxHeight,
+            });
 
         const compressionRatio = (
           ((compressionResult.originalSize - compressionResult.size) / compressionResult.originalSize) *
           100
         ).toFixed(2);
 
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}.jpeg`;
-        const url = await this.uploadToS3(compressionResult.buffer, key, bucket, "image/jpeg");
+        const extension = isPNG ? ".png" : ".jpeg";
+        const mimeType = isPNG ? "image/png" : "image/jpeg";
+        const key = `${prefix}${folder}/${uniqueId}-${baseName}${extension}`;
+        const url = await this.uploadToS3(compressionResult.buffer, key, bucket, mimeType);
 
         result.key = key;
         result.url = url;
         result.size = compressionResult.size;
-        result.mimeType = "image/jpeg";
+        result.mimeType = mimeType;
         result.originalSize = compressionResult.originalSize;
         result.compressionRatio = parseFloat(compressionRatio);
 
         if (process.env.NODE_ENV !== "production") {
-          console.log("🗜️ Compression Results:");
+          console.log(`🗜️ Compression Results (${isPNG ? "PNG" : "JPEG"}):`);
           console.log(`Original size: ${this.formatFileSize(compressionResult.originalSize)}`);
           console.log(`Compressed size: ${this.formatFileSize(compressionResult.size)}`);
           console.log(`Compression ratio: ${compressionRatio}%`);
@@ -275,6 +286,38 @@ export class S3Helper {
       })
       .jpeg({
         quality: options.quality,
+        progressive: true,
+      })
+      .toBuffer();
+
+    return {
+      buffer: compressedBuffer,
+      size: compressedBuffer.length,
+      originalSize: originalSize,
+    };
+  }
+
+  /**
+   * Compress image to PNG format
+   */
+  private async compressToPNG(
+    buffer: Buffer,
+    options: {
+      quality: number;
+      maxWidth: number;
+      maxHeight: number;
+    }
+  ): Promise<{ buffer: Buffer; size: number; originalSize: number }> {
+    const originalSize = buffer.length;
+
+    const compressedBuffer = await sharp(buffer)
+      .resize(options.maxWidth, options.maxHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .png({
+        quality: options.quality,
+        compressionLevel: 9,
         progressive: true,
       })
       .toBuffer();

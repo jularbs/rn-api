@@ -101,12 +101,10 @@ describe("Station Controller", () => {
           success: true,
           message: "Station created successfully",
           data: expect.objectContaining({
-            station: expect.objectContaining({
-              name: "DZBB Radio",
-              frequency: "594 AM",
-              locationGroup: "luzon",
-              status: "active",
-            }),
+            name: "DZBB Radio",
+            frequency: "594 AM",
+            locationGroup: "luzon",
+            status: "active",
           }),
         })
       );
@@ -245,10 +243,8 @@ describe("Station Controller", () => {
           success: true,
           message: "Station updated successfully",
           data: expect.objectContaining({
-            station: expect.objectContaining({
               name: "DZBB Updated",
               frequency: "600 AM",
-            }),
           }),
         })
       );
@@ -279,9 +275,7 @@ describe("Station Controller", () => {
           success: true,
           message: "Station deleted successfully",
           data: expect.objectContaining({
-            station: expect.objectContaining({
               name: existing.name,
-            }),
           }),
         })
       );

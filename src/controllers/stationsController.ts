@@ -81,7 +81,7 @@ export const getStationById = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const station = await StationModel.findById(id);
+    const station = await StationModel.findById(id).populate("logoImage", "key bucket url mimeType");
 
     if (!station) {
       res.status(404).json({
@@ -94,7 +94,7 @@ export const getStationById = async (req: Request, res: Response): Promise<void>
     res.json({
       success: true,
       message: "Station retrieved successfully",
-      data: { station },
+      data: station,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -127,7 +127,7 @@ export const getStationBySlug = async (req: Request, res: Response): Promise<voi
     res.json({
       success: true,
       message: "Station retrieved successfully",
-      data: { station },
+      data: station,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -272,7 +272,7 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
     res.status(201).json({
       success: true,
       message: "Station created successfully",
-      data: { station },
+      data: station,
     });
   } catch (error: unknown) {
     console.log("Create station error caught:", error);
@@ -480,7 +480,7 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
     res.json({
       success: true,
       message: "Station updated successfully",
-      data: { station: updatedStation },
+      data: updatedStation,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -562,7 +562,7 @@ export const deleteStation = async (req: Request, res: Response): Promise<void> 
     res.json({
       success: true,
       message: "Station deleted successfully",
-      data: { station: deletedStation },
+      data: deletedStation,
     });
     return;
   } catch (error: unknown) {
@@ -608,7 +608,7 @@ export const toggleStationStatus = async (req: Request, res: Response): Promise<
     res.json({
       success: true,
       message: `Station ${newStatus === "active" ? "activated" : "deactivated"} successfully`,
-      data: { station: updatedStation },
+      data: updatedStation,
     });
   } catch (error: unknown) {
     const err = error as Error;

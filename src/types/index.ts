@@ -21,7 +21,7 @@ export interface AppInfo {
 // Re-export all types from type definition files
 export * from "./authTypes";
 export * from "./categoryTypes";
-export * from "./hostTypes";
+export * from "./jockTypes";
 export * from "./mediaTypes";
 export * from "./optionTypes";
 export * from "./postTypes";

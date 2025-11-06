@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, afterEach, describe, vi, expect, it } from "vitest";
 import { Request, Response } from "express";
-import { HostModel } from "@/models/Host";
+import { JockModel } from "@/models/Jock";
 import mongoose from "mongoose";
 
 vi.mock("formidable", () => ({
   default: vi.fn(),
 }));
 
-describe("Host Controller", () => {
+describe("Jock Controller", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
   let statusMock: ReturnType<typeof vi.fn>;
@@ -44,71 +44,71 @@ describe("Host Controller", () => {
   });
 
   describe("Success Cases", () => {
-    it("should create a host successfully", async () => {
+    it("should create a jock successfully", async () => {
       vi.doMock("@/utils/formidableFirstValues", () => ({
         firstValues: vi.fn().mockReturnValue({
-          name: "Test Host",
-          bio: "This is a test host",
+          name: "Test Jock",
+          bio: "This is a test jock",
           isActive: true,
         }),
       }));
 
-      const { createHost } = await import("@/controllers/hostController");
+      const { createJock } = await import("@/controllers/jocksController");
 
       const mockFormidable = await import("formidable");
       vi.mocked(mockFormidable.default).mockReturnValue({
         parse: vi.fn().mockResolvedValue([
           {
-            name: ["Test Host"],
-            bio: ["this is a test host"],
+            name: ["Test Jock"],
+            bio: ["this is a test jock"],
             isActive: [true],
           },
           {},
         ]),
       } as any);
 
-      // Call your createHost controller function here
-      await createHost(req as Request, res as Response);
+      // Call your createJock controller function here
+      await createJock(req as Request, res as Response);
 
       // Add your assertions here
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          message: "Host created successfully",
+          message: "Jock created successfully",
           data: expect.objectContaining({
-            name: "Test Host",
-            bio: "This is a test host",
+            name: "Test Jock",
+            bio: "This is a test jock",
             isActive: true,
           }),
         })
       );
 
       // confirm database insertion
-      const createdHost = await HostModel.findOne({ slug: "test-host" });
-      expect(createdHost).not.toBeNull();
-      expect(createdHost?.name).toBe("Test Host");
-      expect(createdHost?.bio).toBe("This is a test host");
+      const createdJock = await JockModel.findOne({ slug: "test-jock" });
+      expect(createdJock).not.toBeNull();
+      expect(createdJock?.name).toBe("Test Jock");
+      expect(createdJock?.bio).toBe("This is a test jock");
     });
 
-    it("should get all hosts successfully", async () => {
-      const hostData = {
-        name: "Host One",
-        slug: "host-one",
+    it("should get all jocks successfully", async () => {
+      const jockData = {
+        name: "Jock One",
+        slug: "jock-one",
         bio: "Bio One",
         isActive: true,
       };
-      await HostModel.create(hostData);
+      await JockModel.create(jockData);
       
-      const { getAllHosts } = await import("@/controllers/hostController");
-      await getAllHosts(req as Request, res as Response);
+      const { getAllJocks } = await import("@/controllers/jocksController");
+      await getAllJocks(req as Request, res as Response);
 
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          message: "Hosts retrieved successfully",
+          message: "Jocks retrieved successfully",
           data: expect.arrayContaining([
             expect.objectContaining({
-              name: "Host One",
+              name: "Jock One",
               bio: "Bio One",
             }),
           ]),
@@ -116,56 +116,56 @@ describe("Host Controller", () => {
       );
     });
 
-    it("should get host by ID successfully", async () => {
-      const hostData = {
-        name: "Test Host",
-        slug: "test-host",
-        bio: "This is a test host fetched by ID",
+    it("should get jock by ID successfully", async () => {
+      const jockData = {
+        name: "Test Jock",
+        slug: "test-jock",
+        bio: "This is a test jock fetched by ID",
         isActive: true,
       };
-      const createdHost = await HostModel.create(hostData);
+      const createdJock = await JockModel.create(jockData);
 
-      req.params = { id: createdHost._id.toString() };
+      req.params = { id: createdJock._id.toString() };
 
-      // Call your getHostById controller function here
-      const { getHostById } = await import("@/controllers/hostController");
-      await getHostById(req as Request, res as Response);
+      // Call your getJockById controller function here
+      const { getJockById } = await import("@/controllers/jocksController");
+      await getJockById(req as Request, res as Response);
 
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          message: "Host retrieved successfully",
+          message: "Jock retrieved successfully",
           data: expect.objectContaining({
-            name: hostData.name,
-            bio: hostData.bio,
+            name: jockData.name,
+            bio: jockData.bio,
           }),
         })
       );
     });
 
-    it("should get host by slug successfully", async () => {
-      const hostData = {
-        name: "Test Host",
-        slug: "test-host",
-        bio: "This is a test host fetched by ID",
+    it("should get jock by slug successfully", async () => {
+      const jockData = {
+        name: "Test Jock",
+        slug: "test-jock",
+        bio: "This is a test jock fetched by ID",
         isActive: true,
       };
-      const createdHost = await HostModel.create(hostData);
+      const createdJock = await JockModel.create(jockData);
 
-      req.params = { slug: createdHost.slug };
+      req.params = { slug: createdJock.slug };
 
-      // Call your getHostById controller function here
-      const { getHostBySlug } = await import("@/controllers/hostController");
-      await getHostBySlug(req as Request, res as Response);
+      // Call your getJockById controller function here
+      const { getJockBySlug } = await import("@/controllers/jocksController");
+      await getJockBySlug(req as Request, res as Response);
 
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          message: "Host retrieved successfully",
+          message: "Jock retrieved successfully",
           data: expect.objectContaining({
-            name: hostData.name,
-            slug: hostData.slug,
-            bio: hostData.bio,
+            name: jockData.name,
+            slug: jockData.slug,
+            bio: jockData.bio,
           }),
         })
       );

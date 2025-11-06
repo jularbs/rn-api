@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
-// Base Host Types
-export interface IHostBase {
+// Base Jock Types
+export interface IJockBase {
   name: string;
   slug: string;
   bio?: string;
@@ -18,14 +18,14 @@ export interface IHostBase {
   programs: Types.ObjectId[];
 }
 
-export interface IHost extends IHostBase {
+export interface IJock extends IJockBase {
   _id: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
 
 // Request Types
-export interface CreateHostRequest {
+export interface CreateJockRequest {
   name: string;
   slug?: string;
   bio?: string;
@@ -42,7 +42,7 @@ export interface CreateHostRequest {
   programs?: string[];
 }
 
-export interface UpdateHostRequest {
+export interface UpdateJockRequest {
   name?: string;
   slug?: string;
   bio?: string;
@@ -59,7 +59,7 @@ export interface UpdateHostRequest {
   programs?: string[];
 }
 
-export interface HostFilters {
+export interface JockFilters {
   page?: string;
   limit?: string;
   search?: string;
@@ -69,7 +69,7 @@ export interface HostFilters {
   withPrograms?: string;
 }
 
-export interface HostPagination {
+export interface JockPagination {
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -79,25 +79,25 @@ export interface HostPagination {
 }
 
 // Response Types
-export interface HostResponse {
+export interface JockResponse {
   success: boolean;
   message: string;
   data: {
-    host: IHost;
+    jock: IJock;
   };
 }
 
-export interface HostsResponse {
+export interface JocksResponse {
   success: boolean;
   message: string;
-  data: IHost[];
-  pagination: HostPagination;
+  data: IJock[];
+  pagination: JockPagination;
 }
 
-export interface SearchHostsResponse {
+export interface SearchJocksResponse {
   success: boolean;
   message: string;
-  data: IHost[];
+  data: IJock[];
 }
 
 // Program Management Types
@@ -110,7 +110,7 @@ export interface RemoveProgramRequest {
 }
 
 // Statistics Types
-export interface HostStats {
+export interface JockStats {
   _id: Types.ObjectId;
   name: string;
   slug: string;
@@ -118,8 +118,8 @@ export interface HostStats {
   isActive: boolean;
 }
 
-// Populated Host Types (for responses with populated references)
-export interface PopulatedHost extends Omit<IHost, 'image' | 'programs'> {
+// Populated Jock Types (for responses with populated references)
+export interface PopulatedJock extends Omit<IJock, "image" | "programs"> {
   image?: {
     _id: Types.ObjectId;
     filename: string;
@@ -133,33 +133,33 @@ export interface PopulatedHost extends Omit<IHost, 'image' | 'programs'> {
   }>;
 }
 
-export interface PopulatedHostResponse {
+export interface PopulatedJockResponse {
   success: boolean;
   message: string;
   data: {
-    host: PopulatedHost;
+    jock: PopulatedJock;
   };
 }
 
-export interface PopulatedHostsResponse {
+export interface PopulatedJocksResponse {
   success: boolean;
   message: string;
-  data: PopulatedHost[];
-  pagination: HostPagination;
+  data: PopulatedJock[];
+  pagination: JockPagination;
 }
 
 // Sort options
-export type HostSortField = "name" | "slug" | "email" | "createdAt" | "updatedAt";
+export type JockSortField = "name" | "slug" | "email" | "createdAt" | "updatedAt";
 
 // Search options
-export interface HostSearchOptions {
+export interface JockSearchOptions {
   query: string;
   fields?: string[];
   limit?: number;
 }
 
 // Error types
-export interface HostError {
+export interface JockError {
   success: false;
   message: string;
   error?: string;
@@ -167,32 +167,9 @@ export interface HostError {
 }
 
 // Validation types
-export interface HostValidation {
+export interface JockValidation {
   isValidEmail?: boolean;
   isValidSlug?: boolean;
   slugExists?: boolean;
   requiredFields?: string[];
 }
-
-// Export all types
-export type {
-  IHostBase,
-  IHost,
-  CreateHostRequest,
-  UpdateHostRequest,
-  HostFilters,
-  HostPagination,
-  HostResponse,
-  HostsResponse,
-  SearchHostsResponse,
-  AddProgramRequest,
-  RemoveProgramRequest,
-  HostStats,
-  PopulatedHost,
-  PopulatedHostResponse,
-  PopulatedHostsResponse,
-  HostSortField,
-  HostSearchOptions,
-  HostError,
-  HostValidation,
-};

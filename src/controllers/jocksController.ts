@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { HostModel } from "@/models/Host";
+import { JockModel } from "@/models/Jock";
 import { Types } from "mongoose";
 import slugify from "slugify";
 import formidable from "formidable";
@@ -8,8 +8,8 @@ import s3Helper from "@/utils/s3Helper";
 import { MediaModel } from "@/models/Media";
 import { firstValues } from "@/utils/formidableFirstValues";
 
-// GET /api/hosts - Get all hosts with filtering and pagination
-export const getAllHosts = async (req: Request, res: Response): Promise<void> => {
+// GET /api/jocks - Get all jocks with filtering and pagination
+export const getAllJocks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { page = "1", limit = "10", search, sortBy = "name", sortOrder = "asc", isActive } = req.query;
 
@@ -37,8 +37,8 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
     const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortField] = sortDirection;
 
-    // Get hosts with pagination
-    const hosts = await HostModel.find(filter)
+    // Get jocks with pagination
+    const jocks = await JockModel.find(filter)
       .lean()
       .sort(sortObj)
       .skip(skip)
@@ -47,13 +47,13 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
       .populate("programs", "title slug");
 
     // Get total count for pagination
-    const total = await HostModel.countDocuments(filter);
+    const total = await JockModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
       success: true,
-      message: "Hosts retrieved successfully",
-      data: hosts,
+      message: "Jocks retrieved successfully",
+      data: jocks,
       pagination: {
         currentPage: pageNum,
         totalPages,
@@ -65,17 +65,17 @@ export const getAllHosts = async (req: Request, res: Response): Promise<void> =>
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Get hosts error:", err);
+    console.error("Get jocks error:", err);
     res.status(500).json({
       success: false,
-      message: "Error retrieving hosts",
+      message: "Error retrieving jocks",
       error: err.message,
     });
   }
 };
 
-// GET /api/hosts/:id - Get single host by ID
-export const getHostById = async (req: Request, res: Response): Promise<void> => {
+// GET /api/jocks/:id - Get single jock by ID
+export const getJockById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -83,46 +83,46 @@ export const getHostById = async (req: Request, res: Response): Promise<void> =>
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
 
-    const host = await HostModel.findById(id)
+    const jock = await JockModel.findById(id)
       .lean()
       .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
-    if (!host) {
+    if (!jock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
     res.json({
       success: true,
-      message: "Host retrieved successfully",
-      data: host,
+      message: "Jock retrieved successfully",
+      data: jock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Get host by ID error:", err);
+    console.error("Get jock by ID error:", err);
     res.status(500).json({
       success: false,
-      message: "Error retrieving host",
+      message: "Error retrieving jock",
       error: err.message,
     });
   }
 };
 
-// GET /api/hosts/slug/:slug - Get single host by slug
-export const getHostBySlug = async (req: Request, res: Response): Promise<void> => {
+// GET /api/jocks/slug/:slug - Get single jock by slug
+export const getJockBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const { slug } = req.params;
 
-    const host = await HostModel.findOne({
+    const jock = await JockModel.findOne({
       slug: slug.toLowerCase(),
       isActive: true,
     })
@@ -130,32 +130,32 @@ export const getHostBySlug = async (req: Request, res: Response): Promise<void> 
       .populate("image", "key bucket mimeType")
       .populate("programs", "title slug description");
 
-    if (!host) {
+    if (!jock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
     res.json({
       success: true,
-      message: "Host retrieved successfully",
-      data: host,
+      message: "Jock retrieved successfully",
+      data: jock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Get host by slug error:", err);
+    console.error("Get jock by slug error:", err);
     res.status(500).json({
       success: false,
-      message: "Error retrieving host",
+      message: "Error retrieving jock",
       error: err.message,
     });
   }
 };
 
-// POST /api/hosts - Create new host
-export const createHost = async (req: Request, res: Response): Promise<void> => {
+// POST /api/jocks - Create new jock
+export const createJock = async (req: Request, res: Response): Promise<void> => {
   try {
     const form = formidable({
       maxFileSize: 10 * 1024 * 1024, // 10MB limit
@@ -175,7 +175,7 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     if (!name) {
       res.status(400).json({
         success: false,
-        message: "Host name is required",
+        message: "Jock name is required",
       });
       return;
     }
@@ -191,13 +191,13 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Check if slug already exists
-    const existingHost = await HostModel.findOne({
+    const existingJock = await JockModel.findOne({
       slug: finalSlug.toLowerCase(),
     });
-    if (existingHost) {
+    if (existingJock) {
       res.status(409).json({
         success: false,
-        message: "Host with this slug already exists",
+        message: "Jock with this slug already exists",
       });
       return;
     }
@@ -220,7 +220,7 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
         const fileBuffer = await fs.promises.readFile(file.filepath);
 
         const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
-          folder: "hosts",
+          folder: "jocks",
           quality: 80,
           maxWidth: 600,
           maxHeight: 600,
@@ -265,8 +265,8 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Create new host
-    const hostData = {
+    // Create new jock
+    const jockData = {
       name: name.trim(),
       slug: finalSlug.toLowerCase().trim(),
       bio: bio?.trim(),
@@ -277,26 +277,26 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
       programs: programs || [],
     };
 
-    const host = new HostModel(hostData);
-    await host.save();
+    const jock = new JockModel(jockData);
+    await jock.save();
 
     // Populate references before returning
-    await host.populate({
+    await jock.populate({
       path: "image",
       select: "key bucket mimeType",
     });
-    await host.populate({
+    await jock.populate({
       path: "programs",
       select: "slug title",
     });
 
     res.status(201).json({
       success: true,
-      message: "Host created successfully",
-      data: host,
+      message: "Jock created successfully",
+      data: jock,
     });
   } catch (error: unknown) {
-    console.log("error on create host: ", error);
+    console.log("error on create jock: ", error);
     const err = error as Error & {
       name?: string;
       code?: number;
@@ -316,23 +316,23 @@ export const createHost = async (req: Request, res: Response): Promise<void> => 
     if (err.code === 11000) {
       res.status(409).json({
         success: false,
-        message: "Host with this slug already exists",
+        message: "Jock with this slug already exists",
       });
       return;
     }
 
-    console.error("Create host error:", err);
+    console.error("Create jock error:", err);
     res.status(500).json({
       success: false,
-      message: "Error creating host",
+      message: "Error creating jock",
       error: err.message,
     });
   }
 };
 
 //TODO: convert request to formData
-// PUT /api/hosts/:id - Update host by ID
-export const updateHost = async (req: Request, res: Response): Promise<void> => {
+// PUT /api/jocks/:id - Update jock by ID
+export const updateJock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -352,24 +352,24 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
 
-    // Check if host exists
-    const existingHost = await HostModel.findById(id);
-    if (!existingHost) {
+    // Check if jock exists
+    const existingJock = await JockModel.findById(id);
+    if (!existingJock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
     // Check slug uniqueness if being updated
-    if (updateData.slug && updateData.slug !== existingHost.slug) {
-      const slugExists = await HostModel.findOne({
+    if (updateData.slug && updateData.slug !== existingJock.slug) {
+      const slugExists = await JockModel.findOne({
         slug: updateData.slug.toLowerCase(),
         _id: { $ne: id },
       });
@@ -377,7 +377,7 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
       if (slugExists) {
         res.status(409).json({
           success: false,
-          message: "Host with this slug already exists",
+          message: "Jock with this slug already exists",
         });
         return;
       }
@@ -401,7 +401,7 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
         const fileBuffer = await fs.promises.readFile(file.filepath);
 
         const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
-          folder: "hosts",
+          folder: "jocks",
           quality: 80,
           maxWidth: 600,
           maxHeight: 600,
@@ -462,8 +462,8 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
     if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
     if (updateData.programs !== undefined) sanitizedUpdateData.programs = updateData.programs;
 
-    // Update host
-    const updatedHost = await HostModel.findByIdAndUpdate(id, sanitizedUpdateData, {
+    // Update jock
+    const updatedJock = await JockModel.findByIdAndUpdate(id, sanitizedUpdateData, {
       new: true,
       runValidators: true,
     })
@@ -472,8 +472,8 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
 
     res.json({
       success: true,
-      message: "Host updated successfully",
-      data: updatedHost,
+      message: "Jock updated successfully",
+      data: updatedJock,
     });
   } catch (error: unknown) {
     const err = error as Error & {
@@ -495,22 +495,22 @@ export const updateHost = async (req: Request, res: Response): Promise<void> => 
     if (err.code === 11000) {
       res.status(409).json({
         success: false,
-        message: "Host with this slug already exists",
+        message: "Jock with this slug already exists",
       });
       return;
     }
 
-    console.error("Update host error:", err);
+    console.error("Update jock error:", err);
     res.status(500).json({
       success: false,
-      message: "Error updating host",
+      message: "Error updating jock",
       error: err.message,
     });
   }
 };
 
-// DELETE /api/hosts/:id - Delete host by ID
-export const deleteHost = async (req: Request, res: Response): Promise<void> => {
+// DELETE /api/jocks/:id - Delete jock by ID
+export const deleteJock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -518,42 +518,42 @@ export const deleteHost = async (req: Request, res: Response): Promise<void> => 
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
 
-    // Check if host exists
-    const existingHost = await HostModel.findById(id);
-    if (!existingHost) {
+    // Check if jock exists
+    const existingJock = await JockModel.findById(id);
+    if (!existingJock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
-    // Delete the host
-    const deletedHost = await HostModel.findByIdAndDelete(id);
+    // Delete the jock
+    const deletedJock = await JockModel.findByIdAndDelete(id);
 
     res.json({
       success: true,
-      message: "Host deleted successfully",
-      data: deletedHost,
+      message: "Jock deleted successfully",
+      data: deletedJock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Delete host error:", err);
+    console.error("Delete jock error:", err);
     res.status(500).json({
       success: false,
-      message: "Error deleting host",
+      message: "Error deleting jock",
       error: err.message,
     });
   }
 };
 
-// PATCH /api/hosts/:id/toggle-status - Toggle host active status
-export const toggleHostStatus = async (req: Request, res: Response): Promise<void> => {
+// PATCH /api/jocks/:id/toggle-status - Toggle jock active status
+export const toggleJockStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -561,46 +561,46 @@ export const toggleHostStatus = async (req: Request, res: Response): Promise<voi
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
 
-    const host = await HostModel.findById(id);
+    const jock = await JockModel.findById(id);
 
-    if (!host) {
+    if (!jock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
     // Toggle status
-    const newStatus = !host.isActive;
+    const newStatus = !jock.isActive;
 
-    const updatedHost = await HostModel.findByIdAndUpdate(id, { isActive: newStatus }, { new: true })
+    const updatedJock = await JockModel.findByIdAndUpdate(id, { isActive: newStatus }, { new: true })
       .populate("image", "key bucket mimeType")
       .populate("programs", "slug title");
 
     res.json({
       success: true,
-      message: `Host ${newStatus ? "activated" : "deactivated"} successfully`,
-      data: updatedHost,
+      message: `Jock ${newStatus ? "activated" : "deactivated"} successfully`,
+      data: updatedJock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Toggle host status error:", err);
+    console.error("Toggle jock status error:", err);
     res.status(500).json({
       success: false,
-      message: "Error updating host status",
+      message: "Error updating jock status",
       error: err.message,
     });
   }
 };
 
-// PATCH /api/hosts/:id/add-program - Add program to host
-export const addProgramToHost = async (req: Request, res: Response): Promise<void> => {
+// PATCH /api/jocks/:id/add-program - Add program to jock
+export const addProgramToJock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { programId } = req.body;
@@ -609,7 +609,7 @@ export const addProgramToHost = async (req: Request, res: Response): Promise<voi
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
@@ -622,36 +622,36 @@ export const addProgramToHost = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const host = await HostModel.findById(id);
+    const jock = await JockModel.findById(id);
 
-    if (!host) {
+    if (!jock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
-    const updatedHost = await host.addProgram(programId);
+    const updatedJock = await jock.addProgram(programId);
 
     res.json({
       success: true,
-      message: "Program added to host successfully",
-      data: updatedHost,
+      message: "Program added to jock successfully",
+      data: updatedJock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Add program to host error:", err);
+    console.error("Add program to jock error:", err);
     res.status(500).json({
       success: false,
-      message: "Error adding program to host",
+      message: "Error adding program to jock",
       error: err.message,
     });
   }
 };
 
-// PATCH /api/hosts/:id/remove-program - Remove program from host
-export const removeProgramFromHost = async (req: Request, res: Response): Promise<void> => {
+// PATCH /api/jocks/:id/remove-program - Remove program from jock
+export const removeProgramFromJock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { programId } = req.body;
@@ -660,7 +660,7 @@ export const removeProgramFromHost = async (req: Request, res: Response): Promis
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
         success: false,
-        message: "Invalid host ID format",
+        message: "Invalid jock ID format",
       });
       return;
     }
@@ -673,36 +673,36 @@ export const removeProgramFromHost = async (req: Request, res: Response): Promis
       return;
     }
 
-    const host = await HostModel.findById(id);
+    const jock = await JockModel.findById(id);
 
-    if (!host) {
+    if (!jock) {
       res.status(404).json({
         success: false,
-        message: "Host not found",
+        message: "Jock not found",
       });
       return;
     }
 
-    const updatedHost = await host.removeProgram(programId);
+    const updatedJock = await jock.removeProgram(programId);
 
     res.json({
       success: true,
-      message: "Program removed from host successfully",
-      data: updatedHost,
+      message: "Program removed from jock successfully",
+      data: updatedJock,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Remove program from host error:", err);
+    console.error("Remove program from jock error:", err);
     res.status(500).json({
       success: false,
-      message: "Error removing program from host",
+      message: "Error removing program from jock",
       error: err.message,
     });
   }
 };
 
-// GET /api/hosts/search - Search hosts
-export const searchHosts = async (req: Request, res: Response): Promise<void> => {
+// GET /api/jocks/search - Search jocks
+export const searchJocks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { query } = req.query;
 
@@ -714,19 +714,19 @@ export const searchHosts = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const hosts = await HostModel.searchHosts(query);
+    const jocks = await JockModel.searchJocks(query);
 
     res.json({
       success: true,
-      message: "Host search completed successfully",
-      data: hosts,
+      message: "Jock search completed successfully",
+      data: jocks,
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Search hosts error:", err);
+    console.error("Search jocks error:", err);
     res.status(500).json({
       success: false,
-      message: "Error searching hosts",
+      message: "Error searching jocks",
       error: err.message,
     });
   }

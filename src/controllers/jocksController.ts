@@ -11,7 +11,7 @@ import { firstValues } from "@/utils/formidableFirstValues";
 // GET /api/jocks - Get all jocks with filtering and pagination
 export const getAllJocks = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { page = "1", limit = "10", search, sortBy = "name", sortOrder = "asc", isActive } = req.query;
+    const { page = "1", limit = "10", search, station, sortBy = "name", sortOrder = "asc", isActive } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -19,6 +19,10 @@ export const getAllJocks = async (req: Request, res: Response): Promise<void> =>
     // Filter by active status
     if (isActive !== undefined) {
       filter.isActive = isActive === "true";
+    }
+
+    if (station !== undefined) {
+      filter.station = station;
     }
 
     // Search functionality
@@ -43,8 +47,9 @@ export const getAllJocks = async (req: Request, res: Response): Promise<void> =>
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum)
-      .populate("image", "key bucket mimeType")
-      .populate("programs", "title slug");
+      .populate("image", "key bucket mimeType url")
+      .populate("station", "name slug")
+      .populate("programs", "name slug");
 
     // Get total count for pagination
     const total = await JockModel.countDocuments(filter);
@@ -90,8 +95,9 @@ export const getJockById = async (req: Request, res: Response): Promise<void> =>
 
     const jock = await JockModel.findById(id)
       .lean()
-      .populate("image", "key bucket mimeType")
-      .populate("programs", "title slug description");
+      .populate("image", "key bucket mimeType url")
+      .populate("station", "name slug")
+      .populate("programs", "name slug description");
 
     if (!jock) {
       res.status(404).json({
@@ -127,8 +133,9 @@ export const getJockBySlug = async (req: Request, res: Response): Promise<void> 
       isActive: true,
     })
       .lean()
-      .populate("image", "key bucket mimeType")
-      .populate("programs", "title slug description");
+      .populate("image", "key bucket mimeType url")
+      .populate("station", "name slug")
+      .populate("programs", "name slug description");
 
     if (!jock) {
       res.status(404).json({
@@ -169,13 +176,30 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
 
     const formData = firstValues(form, fields, ["programs"]);
 
-    const { name, slug, bio, email, socialLinks, isActive = true, programs = [] } = formData;
+    const { name, slug, bio, email, isActive = true, programs = [], station } = formData;
+
+    const socialLinks = {
+      facebook: formData.facebook || "",
+      twitter: formData.twitter || "",
+      instagram: formData.instagram || "",
+      tiktok: formData.tiktok || "",
+      youtube: formData.youtube || "",
+    };
 
     // Validate required fields
     if (!name) {
       res.status(400).json({
         success: false,
         message: "Jock name is required",
+      });
+      return;
+    }
+
+    // Validate station ID if provided
+    if (station && !Types.ObjectId.isValid(station)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid station ID format",
       });
       return;
     }
@@ -222,8 +246,8 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
         const uploadResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "logo.jpg", {
           folder: "jocks",
           quality: 80,
-          maxWidth: 600,
-          maxHeight: 600,
+          maxWidth: 400,
+          maxHeight: 500,
         });
 
         const mediaData = {
@@ -272,6 +296,7 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
       bio: bio?.trim(),
       email: email?.toLowerCase().trim(),
       image: imageId || undefined,
+      station: station || undefined,
       socialLinks: socialLinks || undefined,
       isActive,
       programs: programs || [],
@@ -283,11 +308,15 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
     // Populate references before returning
     await jock.populate({
       path: "image",
-      select: "key bucket mimeType",
+      select: "key bucket mimeType url",
+    });
+    await jock.populate({
+      path: "station",
+      select: "name slug",
     });
     await jock.populate({
       path: "programs",
-      select: "slug title",
+      select: "slug name",
     });
 
     res.status(201).json({
@@ -348,6 +377,16 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
 
     const updateData = firstValues(form, fields, ["programs"]);
 
+        const { name, slug, bio, email, isActive = true, programs = [], station } = updateData;
+
+        const socialLinks = {
+          facebook: updateData.facebook || "",
+          twitter: updateData.twitter || "",
+          instagram: updateData.instagram || "",
+          tiktok: updateData.tiktok || "",
+          youtube: updateData.youtube || "",
+        };
+
     // Validate ObjectId
     if (!Types.ObjectId.isValid(id)) {
       res.status(400).json({
@@ -368,9 +407,9 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Check slug uniqueness if being updated
-    if (updateData.slug && updateData.slug !== existingJock.slug) {
+    if (slug && slug !== existingJock.slug) {
       const slugExists = await JockModel.findOne({
-        slug: updateData.slug.toLowerCase(),
+        slug: slug.toLowerCase(),
         _id: { $ne: id },
       });
 
@@ -384,10 +423,19 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Validate email format if provided
-    if (updateData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(updateData.email)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({
         success: false,
         message: "Invalid email format",
+      });
+      return;
+    }
+
+    // Validate station ID if provided
+    if (station && !Types.ObjectId.isValid(station)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid station ID format",
       });
       return;
     }
@@ -396,6 +444,7 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
 
     const image = files.image;
     if (image) {
+      //TODOS: Delete previous image from s3 and media collection if new image is uploaded
       try {
         const file = Array.isArray(image) ? image[0] : image;
         const fileBuffer = await fs.promises.readFile(file.filepath);
@@ -434,8 +483,8 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Validate program IDs if provided
-    if (updateData.programs && Array.isArray(updateData.programs)) {
-      for (const programId of updateData.programs) {
+    if (programs && Array.isArray(programs)) {
+      for (const programId of programs) {
         if (!Types.ObjectId.isValid(programId)) {
           res.status(400).json({
             success: false,
@@ -449,26 +498,28 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
     // Prepare update data
     const sanitizedUpdateData: Record<string, unknown> = {};
 
-    if (updateData.name !== undefined) sanitizedUpdateData.name = updateData.name?.trim();
-    if (updateData.slug !== undefined) sanitizedUpdateData.slug = updateData.slug?.toLowerCase().trim();
-    if (updateData.bio !== undefined) sanitizedUpdateData.bio = updateData.bio?.trim();
-    if (updateData.email !== undefined) sanitizedUpdateData.email = updateData.email?.toLowerCase().trim();
+    if (name !== undefined) sanitizedUpdateData.name = name?.trim();
+    if (slug !== undefined) sanitizedUpdateData.slug = slug?.toLowerCase().trim();
+    if (bio !== undefined) sanitizedUpdateData.bio = bio?.trim();
+    if (email !== undefined) sanitizedUpdateData.email = email?.toLowerCase().trim();
     if (imageId) {
       sanitizedUpdateData.image = imageId;
     } else {
-      sanitizedUpdateData.image = updateData.image;
+      sanitizedUpdateData.image = image;
     }
-    if (updateData.socialLinks !== undefined) sanitizedUpdateData.socialLinks = updateData.socialLinks;
-    if (updateData.isActive !== undefined) sanitizedUpdateData.isActive = updateData.isActive;
-    if (updateData.programs !== undefined) sanitizedUpdateData.programs = updateData.programs;
+    if (station !== undefined) sanitizedUpdateData.station = station;
+    if (socialLinks !== undefined) sanitizedUpdateData.socialLinks = socialLinks;
+    if (isActive !== undefined) sanitizedUpdateData.isActive = isActive;
+    if (programs !== undefined) sanitizedUpdateData.programs = programs;
 
     // Update jock
     const updatedJock = await JockModel.findByIdAndUpdate(id, sanitizedUpdateData, {
       new: true,
       runValidators: true,
     })
-      .populate("image", "key bucket mimeType")
-      .populate("programs", "slug title");
+      .populate("image", "key bucket mimeType url")
+      .populate("station", "name slug")
+      .populate("programs", "slug name");
 
     res.json({
       success: true,
@@ -580,8 +631,9 @@ export const toggleJockStatus = async (req: Request, res: Response): Promise<voi
     const newStatus = !jock.isActive;
 
     const updatedJock = await JockModel.findByIdAndUpdate(id, { isActive: newStatus }, { new: true })
-      .populate("image", "key bucket mimeType")
-      .populate("programs", "slug title");
+      .populate("image", "key bucket mimeType url")
+      .populate("station", "name slug")
+      .populate("programs", "slug name");
 
     res.json({
       success: true,

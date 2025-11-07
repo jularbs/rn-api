@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import slugify from "slugify";
 import { Program } from "./Program";
 import { Media } from "./Media";
+import { Station } from "./Station";
 
 // Interface for Jock
 export interface IJock {
@@ -12,8 +13,10 @@ export interface IJock {
   bio?: string;
   email?: string;
   image?: Types.ObjectId;
+  station?: Types.ObjectId; // Reference to Station model
   socialLinks?: {
     facebook?: string;
+    youtube?: string,
     twitter?: string;
     instagram?: string;
     tiktok?: string;
@@ -64,9 +67,13 @@ export class Jock {
   @prop({ ref: () => Media })
   public image?: Types.ObjectId;
 
+  @prop({ ref: () => Station, index: true })
+  public station?: Types.ObjectId;
+
   @prop({ type: () => Object, allowMixed: Severity.ALLOW })
   public socialLinks?: {
     facebook?: string;
+    youtube?: string;
     twitter?: string;
     instagram?: string;
     tiktok?: string;

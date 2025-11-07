@@ -152,7 +152,7 @@ export class Program {
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
-    if (this.day.includes(currentDay)) {
+    if (this.day && this.day.includes(currentDay)) {
       const currentMinutes = this.parseTime(currentTime);
       const startMinutes = this.parseTime(this.startTime);
       const endMinutes = this.parseTime(this.endTime);

@@ -8,6 +8,10 @@ import fs from "fs";
 import s3Helper from "@/utils/s3Helper";
 import { MediaModel } from "@/models/Media";
 import { firstValues } from "@/utils/formidableFirstValues";
+import { customAlphabet } from "nanoid";
+
+const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
+const nanoid = customAlphabet(alphabet, 8);
 
 // GET /api/programs - Get all programs with filtering and pagination
 export const getAllPrograms = async (req: Request, res: Response): Promise<void> => {
@@ -245,7 +249,7 @@ export const createProgram = async (req: Request, res: Response): Promise<void> 
     // Generate slug if not provided
     let finalSlug = slug;
     if (!finalSlug) {
-      finalSlug = slugify(name, {
+      finalSlug = slugify(`${name}-${stationExists.slug}-${nanoid()}`, {
         lower: true,
         strict: true,
         remove: /[*+~.()'"!:@]/g,

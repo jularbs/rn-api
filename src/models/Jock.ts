@@ -11,7 +11,6 @@ export interface IJock {
   name: string;
   slug: string;
   bio?: string;
-  email?: string;
   image?: Types.ObjectId;
   station?: Types.ObjectId; // Reference to Station model
   socialLinks?: {
@@ -60,9 +59,6 @@ export class Jock {
 
   @prop({ type: String, trim: true, maxlength: 2000 })
   public bio?: string;
-
-  @prop({ type: String, trim: true, lowercase: true })
-  public email?: string;
 
   @prop({ ref: () => Media })
   public image?: Types.ObjectId;

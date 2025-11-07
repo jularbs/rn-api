@@ -5,7 +5,6 @@ export interface IJockBase {
   name: string;
   slug: string;
   bio?: string;
-  email?: string;
   image?: Types.ObjectId;
   socialLinks?: {
     facebook?: string;
@@ -29,7 +28,6 @@ export interface CreateJockRequest {
   name: string;
   slug?: string;
   bio?: string;
-  email?: string;
   image?: string;
   socialLinks?: {
     facebook?: string;
@@ -46,7 +44,6 @@ export interface UpdateJockRequest {
   name?: string;
   slug?: string;
   bio?: string;
-  email?: string;
   image?: string;
   socialLinks?: {
     facebook?: string;
@@ -149,7 +146,7 @@ export interface PopulatedJocksResponse {
 }
 
 // Sort options
-export type JockSortField = "name" | "slug" | "email" | "createdAt" | "updatedAt";
+export type JockSortField = "name" | "slug" | "createdAt" | "updatedAt";
 
 // Search options
 export interface JockSearchOptions {
@@ -168,7 +165,6 @@ export interface JockError {
 
 // Validation types
 export interface JockValidation {
-  isValidEmail?: boolean;
   isValidSlug?: boolean;
   slugExists?: boolean;
   requiredFields?: string[];

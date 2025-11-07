@@ -27,7 +27,7 @@ export const getAllJocks = async (req: Request, res: Response): Promise<void> =>
 
     // Search functionality
     if (search && typeof search === "string") {
-      filter.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
+      filter.name = { $regex: search, $options: "i" };
     }
 
     // Pagination
@@ -176,7 +176,7 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
 
     const formData = firstValues(form, fields, ["programs"]);
 
-    const { name, slug, bio, email, isActive = true, programs = [], station } = formData;
+    const { name, slug, bio, isActive = true, programs = [], station } = formData;
 
     const socialLinks = {
       facebook: formData.facebook || "",
@@ -222,15 +222,6 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
       res.status(409).json({
         success: false,
         message: "Jock with this slug already exists",
-      });
-      return;
-    }
-
-    // Validate email format if provided
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid email format",
       });
       return;
     }
@@ -294,7 +285,6 @@ export const createJock = async (req: Request, res: Response): Promise<void> => 
       name: name.trim(),
       slug: finalSlug.toLowerCase().trim(),
       bio: bio?.trim(),
-      email: email?.toLowerCase().trim(),
       image: imageId || undefined,
       station: station || undefined,
       socialLinks: socialLinks || undefined,
@@ -377,7 +367,7 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
 
     const updateData = firstValues(form, fields, ["programs"]);
 
-        const { name, slug, bio, email, isActive = true, programs = [], station } = updateData;
+        const { name, slug, bio, isActive = true, programs = [], station } = updateData;
 
         const socialLinks = {
           facebook: updateData.facebook || "",
@@ -420,15 +410,6 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
         });
         return;
       }
-    }
-
-    // Validate email format if provided
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid email format",
-      });
-      return;
     }
 
     // Validate station ID if provided
@@ -501,7 +482,6 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
     if (name !== undefined) sanitizedUpdateData.name = name?.trim();
     if (slug !== undefined) sanitizedUpdateData.slug = slug?.toLowerCase().trim();
     if (bio !== undefined) sanitizedUpdateData.bio = bio?.trim();
-    if (email !== undefined) sanitizedUpdateData.email = email?.toLowerCase().trim();
     if (imageId) {
       sanitizedUpdateData.image = imageId;
     } else {

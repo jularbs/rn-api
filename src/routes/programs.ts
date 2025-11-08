@@ -15,6 +15,7 @@ import {
   findProgramConflicts,
 } from "@/controllers/programsController";
 import { authenticate, authorize } from "@/middleware/auth";
+import { ADMIN_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE } from "@/utils/constants";
 
 const router = Router();
 
@@ -38,25 +39,60 @@ router.get("/v1/programs/schedule/station/:stationId", getProgramsByStation);
 router.get("/v1/programs/schedule/weekly", getWeeklySchedule);
 
 // GET /v1/programs/conflicts - Find time conflicts
-router.get("/v1/programs/conflicts", authenticate, authorize("admin", "manager"), findProgramConflicts);
+router.get(
+  "/v1/programs/conflicts",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  findProgramConflicts
+);
 
 // Protected routes - Admin and manager access
 // GET /v1/programs - Get all programs with filtering
-router.get("/v1/programs", authenticate, authorize("admin", "manager"), getAllPrograms);
+router.get(
+  "/v1/programs",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  getAllPrograms
+);
 
 // POST /v1/programs - Create new program
-router.post("/v1/programs", authenticate, authorize("admin", "manager"), createProgram);
+router.post(
+  "/v1/programs",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  createProgram
+);
 
 // PATCH /v1/programs/:id/toggle-status - Toggle program status
-router.patch("/v1/programs/:id/toggle-status", authenticate, authorize("admin", "manager"), toggleProgramStatus);
+router.patch(
+  "/v1/programs/:id/toggle-status",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  toggleProgramStatus
+);
 
 // PUT /v1/programs/:id - Update program
-router.put("/v1/programs/:id", authenticate, authorize("admin", "manager"), updateProgram);
+router.put(
+  "/v1/programs/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  updateProgram
+);
 
 // DELETE /v1/programs/:id - Delete program
-router.delete("/v1/programs/:id", authenticate, authorize("admin"), deleteProgram);
+router.delete(
+  "/v1/programs/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  deleteProgram
+);
 
 // GET /v1/programs/:id - Get program by ID
-router.get("/v1/programs/:id", authenticate, authorize("admin", "manager"), getProgramById);
+router.get(
+  "/v1/programs/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  getProgramById
+);
 
 export default router;

@@ -1,7 +1,16 @@
-import AWS from "aws-sdk";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
+import slugify from "slugify";
 
 // Validate AWS configuration on startup
 if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -12,20 +21,21 @@ if (!process.env.AWS_S3_BUCKET) {
   console.warn("AWS_S3_BUCKET not set in environment variables");
 }
 
-// Configure AWS S3
-const s3 = new AWS.S3({
+// Configure AWS S3 Client (v3)
+const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-southeast-1",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  signatureVersion: "v4",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
 });
 
 export interface UploadOptions {
-  quality?: number; // AVIF quality (1-100)
-  maxWidth?: number; // Maximum width for resizing
-  maxHeight?: number; // Maximum height for resizing
-  bucket?: string; // S3 bucket name
-  folder?: string; // S3 folder path
+  quality?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  bucket?: string;
+  folder?: string;
 }
 
 export interface UploadResult {
@@ -33,16 +43,18 @@ export interface UploadResult {
   bucket: string;
   url: string;
   mimeType: string;
-  size?: number; // File size in bytes
-  originalSize?: number; // Original file size before compression (for images)
-  compressionRatio?: number; // Percentage of compression achieved
+  size?: number;
+  originalSize?: number;
+  compressionRatio?: number;
 }
 
 export class S3Helper {
   private bucketName: string;
+  private region: string;
 
   constructor(bucketName?: string) {
     this.bucketName = bucketName || process.env.AWS_S3_BUCKET || "default-bucket";
+    this.region = process.env.AWS_REGION || "ap-southeast-1";
   }
 
   /**
@@ -51,12 +63,10 @@ export class S3Helper {
   async uploadFile(file: Buffer | string, originalName: string, options: UploadOptions = {}): Promise<UploadResult> {
     const { quality = 80, maxWidth = 1920, maxHeight = 1080, bucket = this.bucketName, folder = "uploads" } = options;
 
-    // Generate unique filename
     const fileExtension = path.extname(originalName);
     const baseName = path.basename(originalName, fileExtension);
     const uniqueId = uuidv4();
 
-    // Detect if file is an image
     const isImage = this.isImageFile(originalName);
 
     let fileBuffer: Buffer;
@@ -73,36 +83,48 @@ export class S3Helper {
       mimeType: this.getMimeType(originalName),
     };
 
-    const prefix = process.env.NODE_ENV == "production" ? "" : "staging/";
+    const prefix = process.env.NODE_ENV === "production" ? "" : "staging/";
 
     try {
-      // Process image if it's an image file
       if (isImage) {
-        // Compress using JPEG for better compatibility
-        const compressionResult = await this.compressToJPEG(fileBuffer, {
-          quality,
-          maxWidth,
-          maxHeight,
-        });
+        // Check if the image is PNG to preserve transparency
+        const isPNG = fileExtension.toLowerCase() === ".png";
+
+        const compressionResult = isPNG
+          ? await this.compressToPNG(fileBuffer, {
+              quality,
+              maxWidth,
+              maxHeight,
+            })
+          : await this.compressToJPEG(fileBuffer, {
+              quality,
+              maxWidth,
+              maxHeight,
+            });
 
         const compressionRatio = (
           ((compressionResult.originalSize - compressionResult.size) / compressionResult.originalSize) *
           100
         ).toFixed(2);
 
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}.jpeg`;
-        const upload = await this.uploadToS3(compressionResult.buffer, key, bucket, "image/jpeg");
+        const extension = isPNG ? ".png" : ".jpeg";
+        const mimeType = isPNG ? "image/png" : "image/jpeg";
+        const key = `${prefix}${folder}/${uniqueId}-${slugify(baseName, {
+          lower: true,
+          strict: true,
+          trim: true,
+        })}${extension}`;
+        const url = await this.uploadToS3(compressionResult.buffer, key, bucket, mimeType);
 
         result.key = key;
-        result.url = upload.Location!;
+        result.url = url;
         result.size = compressionResult.size;
-        result.mimeType = "image/jpeg";
+        result.mimeType = mimeType;
         result.originalSize = compressionResult.originalSize;
         result.compressionRatio = parseFloat(compressionRatio);
 
-        // Do not log compression details in production
         if (process.env.NODE_ENV !== "production") {
-          console.log("🗜️ Compression Results:");
+          console.log(`🗜️ Compression Results (${isPNG ? "PNG" : "JPEG"}):`);
           console.log(`Original size: ${this.formatFileSize(compressionResult.originalSize)}`);
           console.log(`Compressed size: ${this.formatFileSize(compressionResult.size)}`);
           console.log(`Compression ratio: ${compressionRatio}%`);
@@ -111,12 +133,15 @@ export class S3Helper {
           );
         }
       } else {
-        // Upload original file
-        const key = `${prefix}${folder}/${uniqueId}-${baseName}${fileExtension}`;
-        const upload = await this.uploadToS3(fileBuffer, key, bucket, result.mimeType);
+        const key = `${prefix}${folder}/${uniqueId}-${slugify(baseName, {
+          lower: true,
+          strict: true,
+          trim: true,
+        })}${fileExtension}`;
+        const url = await this.uploadToS3(fileBuffer, key, bucket, result.mimeType);
 
         result.key = key;
-        result.url = upload.Location!;
+        result.url = url;
         result.size = fileBuffer.length;
       }
 
@@ -135,7 +160,6 @@ export class S3Helper {
     options: UploadOptions = {}
   ): Promise<UploadResult[]> {
     const uploadPromises = files.map((file) => this.uploadFile(file.buffer, file.name, options));
-
     return Promise.all(uploadPromises);
   }
 
@@ -143,13 +167,13 @@ export class S3Helper {
    * Delete file from S3
    */
   async deleteFile(key: string, bucket?: string): Promise<void> {
-    const params = {
+    const command = new DeleteObjectCommand({
       Bucket: bucket || this.bucketName,
       Key: key,
-    };
+    });
 
     try {
-      await s3.deleteObject(params).promise();
+      await s3Client.send(command);
     } catch (error) {
       throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
@@ -159,32 +183,31 @@ export class S3Helper {
    * Delete multiple files from S3
    */
   async deleteMultipleFiles(keys: string[], bucket?: string): Promise<void> {
-    const params = {
+    const command = new DeleteObjectsCommand({
       Bucket: bucket || this.bucketName,
       Delete: {
         Objects: keys.map((key) => ({ Key: key })),
       },
-    };
+    });
 
     try {
-      await s3.deleteObjects(params).promise();
+      await s3Client.send(command);
     } catch (error) {
       throw new Error(`Failed to delete files: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
   /**
-   * Get signed URL for temporary access. defaults to 24 hours
+   * Get signed URL for temporary access (default: 24 hours)
    */
   async getSignedUrl(key: string, expiresIn: number = 86400, bucket?: string): Promise<string> {
-    const params = {
+    const command = new GetObjectCommand({
       Bucket: bucket || this.bucketName,
       Key: key,
-      Expires: expiresIn,
-    };
+    });
 
     try {
-      return s3.getSignedUrl("getObject", params);
+      return await getSignedUrl(s3Client, command, { expiresIn });
     } catch (error) {
       throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
@@ -194,14 +217,25 @@ export class S3Helper {
    * Get S3 object data
    */
   async getS3Object(key: string, bucket?: string): Promise<Buffer> {
-    const params = {
+    const command = new GetObjectCommand({
       Bucket: bucket || this.bucketName,
       Key: key,
-    };
+    });
 
     try {
-      const result = await s3.getObject(params).promise();
-      return result.Body as Buffer;
+      const response = await s3Client.send(command);
+      const stream = response.Body;
+
+      if (!stream) {
+        throw new Error("No body in response");
+      }
+
+      // Convert stream to buffer
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
     } catch (error) {
       throw new Error(`Failed to get S3 object: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
@@ -211,15 +245,15 @@ export class S3Helper {
    * Check if file exists in S3
    */
   async fileExists(key: string, bucket?: string): Promise<boolean> {
-    const params = {
+    const command = new HeadObjectCommand({
       Bucket: bucket || this.bucketName,
       Key: key,
-    };
+    });
 
     try {
-      await s3.headObject(params).promise();
+      await s3Client.send(command);
       return true;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return false;
     }
@@ -228,14 +262,14 @@ export class S3Helper {
   /**
    * Get file metadata from S3
    */
-  async getFileMetadata(key: string, bucket?: string): Promise<AWS.S3.HeadObjectOutput> {
-    const params = {
+  async getFileMetadata(key: string, bucket?: string) {
+    const command = new HeadObjectCommand({
       Bucket: bucket || this.bucketName,
       Key: key,
-    };
+    });
 
     try {
-      return await s3.headObject(params).promise();
+      return await s3Client.send(command);
     } catch (error) {
       throw new Error(`Failed to get file metadata: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
@@ -273,50 +307,80 @@ export class S3Helper {
   }
 
   /**
+   * Compress image to PNG format
+   */
+  private async compressToPNG(
+    buffer: Buffer,
+    options: {
+      quality: number;
+      maxWidth: number;
+      maxHeight: number;
+    }
+  ): Promise<{ buffer: Buffer; size: number; originalSize: number }> {
+    const originalSize = buffer.length;
+
+    const compressedBuffer = await sharp(buffer)
+      .resize(options.maxWidth, options.maxHeight, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .png({
+        quality: options.quality,
+        compressionLevel: 9,
+        progressive: true,
+      })
+      .toBuffer();
+
+    return {
+      buffer: compressedBuffer,
+      size: compressedBuffer.length,
+      originalSize: originalSize,
+    };
+  }
+
+  /**
    * Upload buffer to S3
    */
-  private async uploadToS3(
-    buffer: Buffer,
-    key: string,
-    bucket: string,
-    contentType: string
-  ): Promise<AWS.S3.ManagedUpload.SendData> {
-    const params = {
+  private async uploadToS3(buffer: Buffer, key: string, bucket: string, contentType: string): Promise<string> {
+    const command = new PutObjectCommand({
       Bucket: bucket,
       Key: key,
       Body: buffer,
       ContentType: contentType,
-      CacheControl: "max-age=31536000", // Cache for 1 year
+      CacheControl: "max-age=31536000",
       Metadata: {
         uploadedAt: new Date().toISOString(),
       },
-    };
+    });
 
     try {
-      const result = await s3.upload(params).promise();
-      return result;
+      await s3Client.send(command);
+
+      // Construct the URL manually since v3 doesn't return Location
+      const url = `https://${bucket}.s3.${this.region}.amazonaws.com/${key}`;
+      return url;
     } catch (error: unknown) {
-      const awsError = error as AWS.AWSError;
+      const err = error as Error & { name?: string; $metadata?: { httpStatusCode?: number } };
       console.error("S3 Upload Error:", {
         bucket,
         key,
-        error: awsError.message,
-        code: awsError.code,
-        statusCode: awsError.statusCode,
+        error: err.message,
+        name: err.name,
+        statusCode: err.$metadata?.httpStatusCode,
       });
 
-      // Provide more specific error messages
-      if (awsError.code === "AccessDenied") {
+      // Provide specific error messages
+      if (err.name === "AccessDenied") {
         throw new Error(`S3 Access Denied: Check your AWS credentials and bucket permissions for bucket: ${bucket}`);
-      } else if (awsError.code === "NoSuchBucket") {
+      } else if (err.name === "NoSuchBucket") {
         throw new Error(`S3 Bucket Not Found: The bucket '${bucket}' does not exist or is not accessible`);
-      } else if (awsError.code === "InvalidAccessKeyId") {
+      } else if (err.name === "InvalidAccessKeyId") {
         throw new Error("S3 Invalid Access Key: Check your AWS_ACCESS_KEY_ID environment variable");
-      } else if (awsError.code === "SignatureDoesNotMatch") {
+      } else if (err.name === "SignatureDoesNotMatch") {
         throw new Error("S3 Invalid Secret Key: Check your AWS_SECRET_ACCESS_KEY environment variable");
       }
 
-      throw new Error(`S3 Upload Failed: ${awsError.message || "Unknown error"}`);
+      throw new Error(`S3 Upload Failed: ${err.message || "Unknown error"}`);
     }
   }
 

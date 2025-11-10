@@ -19,9 +19,10 @@ import categoriesRoutes from "./routes/categories";
 import tagsRoutes from "./routes/tags";
 import optionsRoutes from "./routes/options";
 import topBannerRoutes from "./routes/topBanners";
-import hostRoutes from "./routes/hosts";
+import jockRoutes from "./routes/jocks";
 import mediaRoutes from "./routes/media";
 import postsRoutes from "./routes/posts";
+import programsRoutes from "./routes/programs";
 
 //import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
@@ -72,9 +73,10 @@ app.use("/", categoriesRoutes);
 app.use("/", tagsRoutes);
 app.use("/", optionsRoutes);
 app.use("/", topBannerRoutes);
-app.use("/", hostRoutes);
+app.use("/", jockRoutes);
 app.use("/", mediaRoutes);
 app.use("/", postsRoutes);
+app.use("/", programsRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {

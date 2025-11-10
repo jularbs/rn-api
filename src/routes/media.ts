@@ -7,6 +7,7 @@ import {
   getMediaByType,
   uploadMediaFromEditor,
 } from "@/controllers/mediaController";
+import { ADMIN_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE } from "@/utils/constants";
 
 const router = Router();
 
@@ -19,6 +20,6 @@ router.get("/v1/media/types/:type", authenticate, getMediaByType);
 router.post("/v1/media/upload", authenticate, uploadMediaFromEditor);
 
 // Admin/manager only routes
-router.delete("/v1/media/:id", authenticate, authorize("admin", "manager"), deleteMedia);
+router.delete("/v1/media/:id", authenticate, authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE), deleteMedia);
 
 export default router;

@@ -16,6 +16,7 @@ import {
   cleanupUnusedTags,
 } from "@/controllers/tagsController";
 import { authenticate, authorize } from "@/middleware/auth";
+import {ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE} from "@/utils/constants";
 
 const router = Router();
 
@@ -38,32 +39,77 @@ router.get("/v1/tags/:id", getTagById);
 // Protected routes - Require authentication
 // Admin/manager only routes
 // POST /v1/tags - Create new tag
-router.post("/v1/tags/", authenticate, authorize("admin", "manager"), createTag);
+router.post(
+  "/v1/tags/",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  createTag
+);
 
 // POST /v1/tags/batch - Create multiple tags
-router.post("/v1/tags/batch", authenticate, authorize("admin", "manager"), createTagsBatch);
+router.post(
+  "/v1/tags/batch",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  createTagsBatch
+);
 
 // PUT /v1/tags/:id - Update tag by ID
-router.put("/v1/tags/:id", authenticate, authorize("admin", "manager"), updateTag);
+router.put(
+  "/v1/tags/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  updateTag
+);
 
 // DELETE /v1/tags/:id - Delete tag by ID
-router.delete("/v1/tags/:id", authenticate, authorize("admin"), deleteTag);
+router.delete(
+  "/v1/tags/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  deleteTag
+);
 
 // Analytics and statistics routes (admin only)
 // GET /v1/tags/stats - Get tag statistics
-router.get("/v1/tags/stats", authenticate, authorize("admin"), getTagStats);
+router.get(
+  "/v1/tags/stats",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  getTagStats
+);
 
 // DELETE /v1/tags/cleanup-unused - Cleanup unused tags
-router.delete("/v1/tags/cleanup-unused", authenticate, authorize("admin"), cleanupUnusedTags);
+router.delete(
+  "/v1/tags/cleanup-unused",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  cleanupUnusedTags
+);
 
 // Usage management routes (admin/manager)
 // PATCH /v1/tags/:id/increment-usage - Increment tag usage count
-router.patch("/v1/tags/:id/increment-usage", authenticate, authorize("admin", "manager"), incrementTagUsage);
+router.patch(
+  "/v1/tags/:id/increment-usage",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  incrementTagUsage
+);
 
 // PATCH /v1/tags/:id/decrement-usage - Decrement tag usage count
-router.patch("/v1/tags/:id/decrement-usage", authenticate, authorize("admin", "manager"), decrementTagUsage);
+router.patch(
+  "/v1/tags/:id/decrement-usage",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  decrementTagUsage
+);
 
 // POST /v1/tags/bulk-usage - Bulk update tag usage
-router.post("/v1/tags/bulk-usage", authenticate, authorize("admin", "manager"), bulkUpdateTagUsage);
+router.post(
+  "/v1/tags/bulk-usage",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  bulkUpdateTagUsage
+);
 
 export default router;

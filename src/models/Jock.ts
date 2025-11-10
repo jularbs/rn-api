@@ -3,17 +3,19 @@ import { Types } from "mongoose";
 import slugify from "slugify";
 import { Program } from "./Program";
 import { Media } from "./Media";
+import { Station } from "./Station";
 
-// Interface for Host
-export interface IHost {
+// Interface for Jock
+export interface IJock {
   _id: Types.ObjectId;
   name: string;
   slug: string;
   bio?: string;
-  email?: string;
   image?: Types.ObjectId;
+  station?: Types.ObjectId; // Reference to Station model
   socialLinks?: {
     facebook?: string;
+    youtube?: string,
     twitter?: string;
     instagram?: string;
     tiktok?: string;
@@ -24,7 +26,7 @@ export interface IHost {
   updatedAt: Date;
 }
 
-@pre<Host>("save", function () {
+@pre<Jock>("save", function () {
   if (this.isModified("name") || this.isNew) {
     this.slug = slugify(this.name, {
       lower: true,
@@ -46,7 +48,7 @@ export interface IHost {
     allowMixed: Severity.ALLOW,
   },
 })
-export class Host {
+export class Jock {
   public _id!: Types.ObjectId;
 
   @prop({ type: String, required: true, trim: true, maxlength: 200 })
@@ -58,15 +60,16 @@ export class Host {
   @prop({ type: String, trim: true, maxlength: 2000 })
   public bio?: string;
 
-  @prop({ type: String, trim: true, lowercase: true })
-  public email?: string;
-
   @prop({ ref: () => Media })
   public image?: Types.ObjectId;
+
+  @prop({ ref: () => Station, index: true })
+  public station?: Types.ObjectId;
 
   @prop({ type: () => Object, allowMixed: Severity.ALLOW })
   public socialLinks?: {
     facebook?: string;
+    youtube?: string;
     twitter?: string;
     instagram?: string;
     tiktok?: string;
@@ -87,13 +90,13 @@ export class Host {
     if (!this.programs.includes(id)) {
       this.programs.push(id);
     }
-    return await HostModel.findByIdAndUpdate(this._id, { $addToSet: { programs: id } }, { new: true });
+    return await JockModel.findByIdAndUpdate(this._id, { $addToSet: { programs: id } }, { new: true });
   }
 
   // Instance method to remove a program
   public async removeProgram(programId: string | Types.ObjectId) {
     const id = typeof programId === "string" ? new Types.ObjectId(programId) : programId;
-    return await HostModel.findByIdAndUpdate(this._id, { $pull: { programs: id } }, { new: true });
+    return await JockModel.findByIdAndUpdate(this._id, { $pull: { programs: id } }, { new: true });
   }
 
   // Instance method to get program count
@@ -101,24 +104,24 @@ export class Host {
     return this.programs.length;
   }
 
-  // Static method to find hosts with programs
+  // Static method to find jocks with programs
   public static findWithPrograms() {
-    return HostModel.find({
+    return JockModel.find({
       programs: { $exists: true, $not: { $size: 0 } },
       isActive: true,
     }).populate("programs image");
   }
 
-  // Static method to get host statistics
-  public static async getHostStats() {
-    const stats = await HostModel.aggregate([
+  // Static method to get jock statistics
+  public static async getJockStats() {
+    const stats = await JockModel.aggregate([
       { $match: { isActive: true } },
       {
         $group: {
           _id: null,
-          totalHosts: { $sum: 1 },
-          avgProgramsPerHost: { $avg: { $size: "$programs" } },
-          hostsWithPrograms: {
+          totalJocks: { $sum: 1 },
+          avgProgramsPerJock: { $avg: { $size: "$programs" } },
+          jocksWithPrograms: {
             $sum: {
               $cond: [{ $gt: [{ $size: "$programs" }, 0] }, 1, 0],
             },
@@ -129,25 +132,25 @@ export class Host {
 
     return (
       stats[0] || {
-        totalHosts: 0,
-        avgProgramsPerHost: 0,
-        hostsWithPrograms: 0,
+        totalJocks: 0,
+        avgProgramsPerJock: 0,
+        jocksWithPrograms: 0,
       }
     );
   }
 
-  // Static method to search hosts
-  public static searchHosts(query: string) {
+  // Static method to search jocks
+  public static searchJocks(query: string) {
     const searchRegex = new RegExp(query, "i");
-    return HostModel.find({
+    return JockModel.find({
       $or: [{ name: searchRegex }, { bio: searchRegex }],
       isActive: true,
     }).populate("programs image");
   }
 
-  // Static method to get top hosts by program count
-  public static getTopHostsByPrograms(limit = 10) {
-    return HostModel.aggregate([
+  // Static method to get top jocks by program count
+  public static getTopJocksByPrograms(limit = 10) {
+    return JockModel.aggregate([
       { $match: { isActive: true } },
       {
         $addFields: {
@@ -160,4 +163,4 @@ export class Host {
   }
 }
 
-export const HostModel = getModelForClass(Host);
+export const JockModel = getModelForClass(Jock);

@@ -8,7 +8,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phone?: string;
-  role?: "user" | "admin" | "manager";
+  role?: "admin" | "manager" | "managing-editor" | "digital-content-producer";
 }
 
 export interface LoginRequest {

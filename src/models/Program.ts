@@ -99,7 +99,7 @@ export class Program {
   @prop({
     type: String,
     required: true,
-    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format (24-hour)"],
+    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "Start time must be in HH:MM:SS format (24-hour)"],
     index: true,
   })
   public startTime!: string;
@@ -107,7 +107,7 @@ export class Program {
   @prop({
     type: String,
     required: true,
-    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format (24-hour)"],
+    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, "End time must be in HH:MM:SS format (24-hour)"],
   })
   public endTime!: string;
 
@@ -140,7 +140,7 @@ export class Program {
   public createdAt!: Date;
   public updatedAt!: Date;
 
-  // Helper method to parse time string to minutes
+  // Helper method to parse time string to minutes (ignores seconds)
   private parseTime(timeStr: string): number {
     const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
@@ -152,7 +152,7 @@ export class Program {
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
-    if (this.day.includes(currentDay)) {
+    if (this.day && this.day.includes(currentDay)) {
       const currentMinutes = this.parseTime(currentTime);
       const startMinutes = this.parseTime(this.startTime);
       const endMinutes = this.parseTime(this.endTime);

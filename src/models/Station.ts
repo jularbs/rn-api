@@ -18,6 +18,7 @@ export interface IStation {
   audioStreamURL?: string;
   videoStreamURL?: string;
   status: "active" | "inactive";
+  default: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -134,6 +135,13 @@ export class Station {
     default: "active",
   })
   public status!: "active" | "inactive";
+
+  @prop({
+    type: Boolean,
+    required: true,
+    default: false,
+  })
+  public default!: boolean;
 
   public createdAt!: Date;
   public updatedAt!: Date;
@@ -287,6 +295,19 @@ export class Station {
   // Static method to deactivate a station
   public static async deactivateStation(stationId: string | Types.ObjectId) {
     return StationModel.findByIdAndUpdate(stationId, { status: "inactive" }, { new: true });
+  }
+
+  // Static method to set a station as default and unset all others
+  public static async setDefaultStation(stationId: string | Types.ObjectId) {
+    await StationModel.updateMany({}, { default: false });    
+    return StationModel.findByIdAndUpdate(stationId, { default: true }, { new: true });
+  }
+
+    // Static method to find stations with logos
+  public static async getDefaultStation() {
+    return StationModel.findOne({
+      default: true,
+    }).populate("logoImage", "key bucket url mimeType");
   }
 
   // Static method to bulk update stations status

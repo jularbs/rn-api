@@ -620,3 +620,71 @@ export const toggleStationStatus = async (req: Request, res: Response): Promise<
     });
   }
 };
+
+export const getDefaultStation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const defaultStation = await StationModel.getDefaultStation();
+
+    if (!defaultStation) {
+      res.status(404).json({
+        success: false,
+        message: "Default station not found",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: "Default station retrieved successfully",
+      data: defaultStation,
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Get default station error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving default station",
+      error: err.message,
+    });
+  }
+}
+
+
+export const setDefaultStation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!Types.ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid station ID format",
+      });
+      return;
+    }
+
+    const station = await StationModel.setDefaultStation(id);
+
+    if (!station) {
+      res.status(404).json({
+        success: false,
+        message: "Default station not found",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: "Station set as default successfully",
+      data: station,
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("set default station error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error setting default station",
+      error: err.message,
+    });
+  }
+};

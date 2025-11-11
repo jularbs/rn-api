@@ -8,6 +8,8 @@ import {
   updateStation,
   deleteStation,
   toggleStationStatus,
+  getDefaultStation,
+  setDefaultStation,
 } from "@/controllers/stationsController";
 import { authenticate, authorize, optionalAuth } from "@/middleware/auth";
 import { ADMIN_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE } from "@/utils/constants";
@@ -16,7 +18,9 @@ const router = Router();
 
 // Public routes - no authentication required
 router.get("/v1/stations/id/:id", getStationById);
+router.get("/v1/stations/default", getDefaultStation);
 router.get("/v1/stations/:slug", getStationBySlug);
+
 
 // Optionally protected routes
 router.get("/v1/stations", optionalAuth, getAllStations);
@@ -34,6 +38,14 @@ router.put(
   authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
   updateStation
 );
+
+router.put(
+  "/v1/stations/default/:id",
+  authenticate,
+  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
+  setDefaultStation
+);
+
 router.patch(
   "/v1/stations/:id/status",
   authenticate,

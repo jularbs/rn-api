@@ -779,9 +779,11 @@ export const getCurrentlyAiringPrograms = async (req: Request, res: Response): P
   try {
     const { station } = req.query;
 
+    // Get current time in Manila/Asia timezone
     const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    const manilaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+    const currentDay = manilaTime.getDay();
+    const currentTime = `${manilaTime.getHours().toString().padStart(2, "0")}:${manilaTime.getMinutes().toString().padStart(2, "0")}`;
 
     const filter: Record<string, unknown> = {
       day: currentDay,

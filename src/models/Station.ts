@@ -1,4 +1,4 @@
-import { prop, getModelForClass, modelOptions, index, DocumentType, pre } from "@typegoose/typegoose";
+import { prop, getModelForClass, modelOptions, index, DocumentType, pre, Severity } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import slugify from "slugify";
 import validator from "validator";
@@ -17,6 +17,13 @@ export interface IStation {
   mapEmbedCode?: string;
   audioStreamURL?: string;
   videoStreamURL?: string;
+  socialLinks?: {
+    facebook?: string;
+    youtube?: string;
+    twitter?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
   status: "active" | "inactive";
   default: boolean;
   createdAt: Date;
@@ -43,6 +50,9 @@ export interface IStation {
     id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+  },
+  options: {
+    allowMixed: Severity.ALLOW,
   },
 })
 export class Station {
@@ -124,6 +134,15 @@ export class Station {
     validate: [validator.isURL, "Please provide a valid URL for the video stream"],
   })
   public videoStreamURL?: string;
+
+  @prop({ type: () => Object, allowMixed: Severity.ALLOW })
+  public socialLinks?: {
+    facebook?: string;
+    youtube?: string;
+    twitter?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
 
   @prop({
     type: String,

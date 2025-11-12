@@ -37,7 +37,11 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
     const skip = (pageNum - 1) * limitNum;
 
     // Get stations with pagination
-    const stations = await StationModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum);
+    const stations = await StationModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("logoImage", "key bucket url mimeType");
 
     // Get total count for pagination
     const total = await StationModel.countDocuments(filter);
@@ -171,6 +175,14 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
       status = "active",
     } = formData;
 
+    const socialLinks = {
+      facebook: formData.facebook || "",
+      twitter: formData.twitter || "",
+      instagram: formData.instagram || "",
+      tiktok: formData.tiktok || "",
+      youtube: formData.youtube || "",
+    };
+
     // Validate required fields
     if (!name || !frequency || !locationGroup) {
       res.status(400).json({
@@ -260,6 +272,7 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
       mapEmbedCode: mapEmbedCode?.trim(),
       audioStreamURL: audioStreamURL?.trim(),
       videoStreamURL: videoStreamURL?.trim(),
+      socialLinks: socialLinks || undefined,
       status: status as "active" | "inactive",
     };
 
@@ -360,6 +373,14 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
       status,
     } = formData;
 
+    const socialLinks = {
+      facebook: formData.facebook || "",
+      twitter: formData.twitter || "",
+      instagram: formData.instagram || "",
+      tiktok: formData.tiktok || "",
+      youtube: formData.youtube || "",
+    };
+
     // If slug is being updated, check for uniqueness
     if (slug && slug !== existingStation.slug) {
       const slugExists = await StationModel.findOne({
@@ -455,6 +476,7 @@ export const updateStation = async (req: Request, res: Response): Promise<void> 
     if (videoStreamURL !== undefined) sanitizedUpdateData.videoStreamURL = videoStreamURL?.trim();
     if (status !== undefined) sanitizedUpdateData.status = status as "active" | "inactive";
     if (logoImageId !== undefined) sanitizedUpdateData.logoImage = logoImageId;
+    if (socialLinks !== undefined) sanitizedUpdateData.socialLinks = socialLinks;
 
     // Update station
     const updatedStation = await StationModel.findByIdAndUpdate(id, sanitizedUpdateData, {
@@ -647,8 +669,7 @@ export const getDefaultStation = async (req: Request, res: Response): Promise<vo
       error: err.message,
     });
   }
-}
-
+};
 
 export const setDefaultStation = async (req: Request, res: Response): Promise<void> => {
   try {

@@ -794,7 +794,7 @@ export const getCurrentlyAiringPrograms = async (req: Request, res: Response): P
 
     const programs = await ProgramModel.find(filter)
       .populate("image", "key bucket mimeType url")
-      .populate("station", "name slug streamUrl");
+      .populate("station", "name slug");
 
     // Filter programs that are currently on air
     const parseTime = (timeStr: string): number => {

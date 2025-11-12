@@ -377,6 +377,87 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       thumbnailImageId = thumbnailImageMedia._id;
     }
 
+    let metaImageId: Types.ObjectId | undefined;
+    const metaImage = files.metaImage;
+    if (metaImage) {
+      const file = Array.isArray(metaImage) ? metaImage[0] : metaImage;
+      const fileBuffer = await fs.promises.readFile(file.filepath);
+
+      const metaImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "meta-image.jpg", {
+        folder: "posts/meta-images",
+        quality: 95,
+        maxWidth: 750,
+        maxHeight: 500,
+      });
+
+      const metaImageDoc = {
+        originalName: file.originalFilename || "meta-image.jpg",
+        key: metaImageResult.key,
+        bucket: metaImageResult.bucket,
+        url: metaImageResult.url,
+        mimeType: metaImageResult.mimeType,
+        size: metaImageResult.size || file.size,
+      };
+
+      const metaImageMedia = new MediaModel(metaImageDoc);
+      await metaImageMedia.save();
+      metaImageId = metaImageMedia._id;
+    }
+
+    let ogImageId: Types.ObjectId | undefined;
+    const ogImage = files.ogImage;
+    if (ogImage) {
+      const file = Array.isArray(ogImage) ? ogImage[0] : ogImage;
+      const fileBuffer = await fs.promises.readFile(file.filepath);
+
+      const ogImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "og-image.jpg", {
+        folder: "posts/og-images",
+        quality: 95,
+        maxWidth: 750,
+        maxHeight: 500,
+      });
+
+      const ogImageDoc = {
+        originalName: file.originalFilename || "og-image.jpg",
+        key: ogImageResult.key,
+        bucket: ogImageResult.bucket,
+        url: ogImageResult.url,
+        mimeType: ogImageResult.mimeType,
+        size: ogImageResult.size || file.size,
+      };
+
+      const ogImageMedia = new MediaModel(ogImageDoc);
+      await ogImageMedia.save();
+      ogImageId = ogImageMedia._id;
+    }
+
+    let twitterImageId: Types.ObjectId | undefined;
+    const twitterImage = files.twitterImage;
+    if (twitterImage) {
+      const file = Array.isArray(twitterImage) ? twitterImage[0] : twitterImage;
+      const fileBuffer = await fs.promises.readFile(file.filepath);
+
+      const twitterImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "twitter-image.jpg", {
+        folder: "posts/twitter-images",
+        quality: 95,
+        maxWidth: 750,
+        maxHeight: 500,
+      });
+
+      const twitterImageDoc = {
+        originalName: file.originalFilename || "twitter-image.jpg",
+        key: twitterImageResult.key,
+        bucket: twitterImageResult.bucket,
+        url: twitterImageResult.url,
+        mimeType: twitterImageResult.mimeType,
+        size: twitterImageResult.size || file.size,
+      };
+
+      const twitterImageMedia = new MediaModel(twitterImageDoc);
+      await twitterImageMedia.save();
+      twitterImageId = twitterImageMedia._id;
+    }
+
     const postData = {
       title: title.trim(),
       slug: slug.trim(),
@@ -438,6 +519,11 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       focusKeyword: focusKeyword?.trim(),
       readingTime: readingTime?.trim(),
       metaImageAlt: metaImageAlt?.trim(),
+
+      //Meta Images
+      metaImage: metaImageId,
+      ogImage: ogImageId,
+      twitterImage: twitterImageId,
     };
 
     //validate featured image when publishing

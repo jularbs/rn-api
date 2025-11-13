@@ -2,7 +2,7 @@
 export interface CreateStationRequest {
   name: string;
   slug: string;
-  frequency: string;
+  frequency?: string;
   address?: string;
   locationGroup: "luzon" | "visayas" | "mindanao";
   logoImage?: string; // Will be handled as file upload

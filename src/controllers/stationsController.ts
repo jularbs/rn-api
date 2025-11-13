@@ -184,10 +184,10 @@ export const createStation = async (req: Request, res: Response): Promise<void> 
     };
 
     // Validate required fields
-    if (!name || !frequency || !locationGroup) {
+    if (!name || !locationGroup) {
       res.status(400).json({
         success: false,
-        message: "Name, frequency, and location group are required",
+        message: "Name and location group are required",
       });
       return;
     }

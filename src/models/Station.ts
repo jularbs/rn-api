@@ -8,7 +8,7 @@ export interface IStation {
   _id: Types.ObjectId;
   name: string;
   slug: string;
-  frequency: string;
+  frequency?: string;
   address?: string;
   locationGroup: "luzon" | "visayas" | "mindanao";
   logoImage?: Types.ObjectId;
@@ -74,15 +74,14 @@ export class Station {
 
   @prop({
     type: String,
-    required: true,
     trim: true,
     maxlength: [10, "Frequency cannot exceed 10 characters"],
   })
-  public frequency!: string;
+  public frequency?: string;
 
   @prop({
     type: String,
-    trim: true,
+    trim: true, 
     maxlength: [200, "Address cannot exceed 200 characters"],
   })
   public address?: string;

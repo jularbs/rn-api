@@ -320,7 +320,7 @@ describe("Station Controller", () => {
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: "Name, frequency, and location group are required",
+          message: "Name and location group are required",
         })
       );
     });

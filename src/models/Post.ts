@@ -76,8 +76,6 @@ export interface IPost {
   publisher?: string;
   focusKeyword?: string;
   readingTime?: string;
-  metaImage?: Types.ObjectId;
-  metaImageAlt?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -254,12 +252,6 @@ export class Post implements IPost {
 
   @prop({ type: String, trim: true })
   public readingTime?: string;
-
-  @prop({ ref: () => Media })
-  public metaImage?: Types.ObjectId;
-
-  @prop({ type: String, trim: true })
-  public metaImageAlt?: string;
 
   public createdAt!: Date;
   public updatedAt!: Date;

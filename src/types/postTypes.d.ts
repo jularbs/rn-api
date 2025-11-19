@@ -45,8 +45,6 @@ export interface CreatePostRequest {
   publisher?: string;
   focusKeyword?: string;
   readingTime?: string;
-  metaImage?: string;
-  metaImageAlt?: string;
 }
 
 export interface UpdatePostRequest {
@@ -91,8 +89,6 @@ export interface UpdatePostRequest {
   publisher?: string;
   focusKeyword?: string;
   readingTime?: string;
-  metaImage?: string;
-  metaImageAlt?: string;
 }
 
 export interface PostQueryParams {
@@ -214,15 +210,6 @@ export interface PostResponse {
   publisher?: string;
   focusKeyword?: string;
   readingTime?: string;
-  metaImage?: {
-    _id: Types.ObjectId;
-    originalName: string;
-    fileName: string;
-    mimeType: string;
-    size: number;
-    url: string;
-  };
-  metaImageAlt?: string;
   createdAt: Date;
   updatedAt: Date;
 }

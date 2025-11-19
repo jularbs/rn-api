@@ -18,6 +18,7 @@ import s3Helper from "@/utils/s3Helper";
 import { MediaModel } from "@/models/Media";
 const { firstValues } = require("formidable/src/helpers/firstValues.js");
 import sanitize from "mongo-sanitize";
+import { stripHtml } from "string-strip-html";
 
 // GET /api/posts - Get all posts with advanced filtering and pagination
 export const getPosts = async (
@@ -201,7 +202,6 @@ export const getPost = async (req: Request, res: Response): Promise<void> => {
         .populate("tags", "name slug description")
         .populate("featuredImage", "url key bucket mimeType")
         .populate("thumbnailImage", "url key bucket mimeType")
-        .populate("metaImage", "url key bucket mimeType")
         .populate("ogImage", "url key bucket mimeType")
         .populate("twitterImage", "url key bucket mimeType");
     }
@@ -243,7 +243,6 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
     const {
       title,
       slug,
-      excerpt,
       content,
       author,
       categories = [],
@@ -281,7 +280,6 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       publisher,
       focusKeyword,
       readingTime,
-      metaImageAlt,
     } = formData;
 
     // Validation
@@ -380,33 +378,6 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       thumbnailImageId = thumbnailImageMedia._id;
     }
 
-    let metaImageId: Types.ObjectId | undefined;
-    const metaImage = files.metaImage;
-    if (metaImage) {
-      const file = Array.isArray(metaImage) ? metaImage[0] : metaImage;
-      const fileBuffer = await fs.promises.readFile(file.filepath);
-
-      const metaImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "meta-image.jpg", {
-        folder: "posts/meta-images",
-        quality: 95,
-        maxWidth: 750,
-        maxHeight: 500,
-      });
-
-      const metaImageDoc = {
-        originalName: file.originalFilename || "meta-image.jpg",
-        key: metaImageResult.key,
-        bucket: metaImageResult.bucket,
-        url: metaImageResult.url,
-        mimeType: metaImageResult.mimeType,
-        size: metaImageResult.size || file.size,
-      };
-
-      const metaImageMedia = new MediaModel(metaImageDoc);
-      await metaImageMedia.save();
-      metaImageId = metaImageMedia._id;
-    }
-
     let ogImageId: Types.ObjectId | undefined;
     const ogImage = files.ogImage;
     if (ogImage) {
@@ -464,7 +435,7 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
     const postData = {
       title: title.trim(),
       slug: slug.trim(),
-      excerpt: excerpt?.trim(),
+      excerpt: stripHtml(content).result.substring(0, 300), // Generate excerpt from content
       content: content.trim(),
       author: author,
       type: type,
@@ -521,10 +492,8 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       publisher: publisher?.trim(),
       focusKeyword: focusKeyword?.trim(),
       readingTime: readingTime?.trim(),
-      metaImageAlt: metaImageAlt?.trim(),
 
       //Meta Images
-      metaImage: metaImageId,
       ogImage: ogImageId,
       twitterImage: twitterImageId,
     };
@@ -613,6 +582,11 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
       return;
     }
 
+    //generate new excerpt if content is updated
+    if (updateData.content !== currentPost.content || !currentPost.excerpt) {
+      updateData.excerpt = stripHtml(updateData.content).result.substring(0, 300);
+    }
+
     // Only check for existing slug if the slug has changed
     if (updateData.slug.trim() !== currentPost.slug) {
       const existingPost = await PostModel.findOne({ slug: updateData.slug.trim() });
@@ -659,7 +633,6 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
     updateData.featuredImage = currentPost.featuredImage;
     updateData.thumbnailImage = currentPost.thumbnailImage;
     updateData.ogImage = currentPost.ogImage;
-    updateData.metaImage = currentPost.metaImage;
     updateData.twitterImage = currentPost.twitterImage;
 
     //TODOS: Handle image uploads for featuredImage and thumbnailImage
@@ -714,32 +687,6 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
     }
 
     // Handle SEO images upload
-    const metaImage = files.metaImage;
-    if (metaImage) {
-      const file = Array.isArray(metaImage) ? metaImage[0] : metaImage;
-      const fileBuffer = await fs.promises.readFile(file.filepath);
-
-      const metaImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "meta-image.jpg", {
-        folder: "posts/meta-images",
-        quality: 95,
-        maxWidth: 750,
-        maxHeight: 500,
-      });
-
-      const metaImageDoc = {
-        originalName: file.originalFilename || "meta-image.jpg",
-        key: metaImageResult.key,
-        bucket: metaImageResult.bucket,
-        url: metaImageResult.url,
-        mimeType: metaImageResult.mimeType,
-        size: metaImageResult.size || file.size,
-      };
-
-      const metaImageMedia = new MediaModel(metaImageDoc);
-      await metaImageMedia.save();
-      updateData.metaImage = metaImageMedia._id;
-    }
-
     const ogImage = files.ogImage;
     if (ogImage) {
       const file = Array.isArray(ogImage) ? ogImage[0] : ogImage;

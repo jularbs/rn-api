@@ -11,7 +11,7 @@ import {
   removeProgramFromJock,
   searchJocks,
 } from "@/controllers/jocksController";
-import { authenticate, authorize } from "@/middleware/auth";
+import { authenticate, authorize, optionalAuth } from "@/middleware/auth";
 import { ADMIN_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE } from "@/utils/constants";
 
 const router = Router();
@@ -20,15 +20,11 @@ const router = Router();
 // GET /v1/jocks/search - Search jocks
 router.get("/v1/jocks/search", searchJocks);
 
-// Protected routes - Admin and manager access
+//Optional Routes
 // GET /v1/jocks - Get all jocks with filtering
-router.get(
-  "/v1/jocks",
-  authenticate,
-  authorize(ADMIN_ROLE, MANAGER_ROLE, MANAGING_EDITOR_ROLE, DIGITAL_CONTENT_PRODUCER_ROLE),
-  getAllJocks
-);
+router.get("/v1/jocks", optionalAuth, getAllJocks);
 
+// Protected routes - Admin and manager access
 // POST /v1/jocks - Create new jock
 router.post(
   "/v1/jocks",

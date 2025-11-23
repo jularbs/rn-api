@@ -17,8 +17,12 @@ export const getAllJocks = async (req: Request, res: Response): Promise<void> =>
     const filter: Record<string, unknown> = {};
 
     // Filter by active status
-    if (isActive !== undefined) {
-      filter.isActive = isActive === "true";
+    if (req.user) {
+      if (isActive !== undefined) {
+        filter.isActive = isActive === "true";
+      }
+    } else {
+      filter.isActive = true;
     }
 
     if (station !== undefined) {
@@ -367,15 +371,15 @@ export const updateJock = async (req: Request, res: Response): Promise<void> => 
 
     const updateData = firstValues(form, fields, ["programs"]);
 
-        const { name, slug, bio, isActive = true, programs = [], station } = updateData;
+    const { name, slug, bio, isActive = true, programs = [], station } = updateData;
 
-        const socialLinks = {
-          facebook: updateData.facebook || "",
-          twitter: updateData.twitter || "",
-          instagram: updateData.instagram || "",
-          tiktok: updateData.tiktok || "",
-          youtube: updateData.youtube || "",
-        };
+    const socialLinks = {
+      facebook: updateData.facebook || "",
+      twitter: updateData.twitter || "",
+      instagram: updateData.instagram || "",
+      tiktok: updateData.tiktok || "",
+      youtube: updateData.youtube || "",
+    };
 
     // Validate ObjectId
     if (!Types.ObjectId.isValid(id)) {

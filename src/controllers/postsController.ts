@@ -432,6 +432,26 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       twitterImageId = twitterImageMedia._id;
     }
 
+    // Convert publishedAt from Asia/Manila timezone to UTC if provided
+    let publishedAtUTC;
+    if (formData.publishedAt) {
+      const manilaOffset = 8 * 60 * 60 * 1000; // Manila is UTC+8 (8 hours in milliseconds)
+      const inputDate = new Date(formData.publishedAt);
+
+      // Get the date components as if they were in Manila time
+      const year = inputDate.getFullYear();
+      const month = inputDate.getMonth();
+      const day = inputDate.getDate();
+      const hours = inputDate.getHours();
+      const minutes = inputDate.getMinutes();
+      const seconds = inputDate.getSeconds();
+      const ms = inputDate.getMilliseconds();
+
+      // Create a new date in UTC with Manila time values, then subtract 8 hours
+      const utcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds, ms));
+      publishedAtUTC = new Date(utcDate.getTime() - manilaOffset);
+    }
+
     const postData = {
       title: title.trim(),
       slug: slug.trim(),
@@ -496,6 +516,9 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
       //Meta Images
       ogImage: ogImageId,
       twitterImage: twitterImageId,
+
+      // Published date (converted from Manila to UTC)
+      publishedAt: publishedAtUTC,
     };
 
     //validate featured image when publishing
@@ -737,6 +760,25 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
       const twitterImageMedia = new MediaModel(twitterImageDoc);
       await twitterImageMedia.save();
       updateData.twitterImage = twitterImageMedia._id;
+    }
+
+    // Convert publishedAt from Asia/Manila timezone to UTC
+    if (updateData.publishedAt) {
+      const manilaOffset = 8 * 60 * 60 * 1000; // Manila is UTC+8 (8 hours in milliseconds)
+      const inputDate = new Date(updateData.publishedAt);
+
+      // Get the date components as if they were in Manila time
+      const year = inputDate.getFullYear();
+      const month = inputDate.getMonth();
+      const day = inputDate.getDate();
+      const hours = inputDate.getHours();
+      const minutes = inputDate.getMinutes();
+      const seconds = inputDate.getSeconds();
+      const ms = inputDate.getMilliseconds();
+
+      // Create a new date in UTC with Manila time values, then subtract 8 hours
+      const utcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds, ms));
+      updateData.publishedAt = new Date(utcDate.getTime() - manilaOffset);
     }
 
     // Build update object

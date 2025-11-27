@@ -118,11 +118,18 @@ export const getPosts = async (
         dateFilter.$lte = new Date(endOfDay.getTime() - manilaOffset * 60 * 1000);
       }
 
-      // Allow date filter only for authenticated users
       if (req.user) {
         filter.publishedAt = dateFilter;
       } else {
-        filter.publishedAt = { $lte: new Date() };
+        const publicDateFilter: Record<string, Date> = {};
+        if (dateFilter.$gte) {
+          publicDateFilter.$gte = dateFilter.$gte;
+        }
+        //Only allow up to current date for public requests
+        if (dateFilter.$lte) {
+          publicDateFilter.$lte = dateFilter.$lte >= new Date() ? new Date() : dateFilter.$lte;
+        }
+        filter.publishedAt = publicDateFilter;
       }
     }
 

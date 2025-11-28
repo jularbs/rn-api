@@ -7,7 +7,7 @@ import slugify from "slugify";
 // GET /api/categories - Get all categories with filtering and pagination
 export const getCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc" } = req.query;
+    const { isActive, page = "1", limit = "10", search, sortBy = "sortOrder", sortOrder = "asc", id } = req.query;
 
     // Build filter object
     const filter: Record<string, unknown> = {};
@@ -32,6 +32,17 @@ export const getCategories = async (req: Request, res: Response): Promise<void> 
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { slug: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    //filter IDs
+    if (id && typeof id === "string" && JSON.parse(id).length > 0) {
+      filter.$and = [
+        {
+          _id: {
+            $in: JSON.parse(id),
+          },
+        },
       ];
     }
 

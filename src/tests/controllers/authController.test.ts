@@ -85,7 +85,6 @@ describe("Auth Controller", () => {
       expect(user?.fullName).toBe(validUserData.fullName);
       expect(user?.email).toBe(validUserData.email);
       expect(user?.accountVerified).toBe(false);
-      expect(user?.emailVerified).toBe(false);
     });
 
     it("should not allow registration with an existing email", async () => {
@@ -131,7 +130,6 @@ describe("Auth Controller", () => {
       const user = await UserModel.findOne({ email: newUserData.email });
       if (user) {
         user.accountVerified = true;
-        user.emailVerified = true;
         await user.save();
       }
 
@@ -207,7 +205,6 @@ describe("Auth Controller", () => {
       const user = await UserModel.findOne({ email: userData.email });
       if (user) {
         user.accountVerified = true;
-        user.emailVerified = true;
         await user.save();
       }
 

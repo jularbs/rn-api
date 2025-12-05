@@ -22,8 +22,8 @@ export interface RequestPasswordResetRequest {
 
 export interface ResetPasswordRequest {
   token: string;
-  newPassword: string;
-  confirmPassword: string;
+  password: string;
+  confirm: string;
 }
 
 export interface ChangePasswordRequest {

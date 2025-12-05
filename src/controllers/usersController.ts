@@ -174,6 +174,22 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     const { id } = req.params;
     const updates = req.body;
 
+    // Get the current user to check if accountVerified is being changed
+    const currentUser = await UserModel.findById(id).select('accountVerified email fullName');
+    
+    if (!currentUser) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+      return;
+    }
+
+    // Check if accountVerified is being updated from false to true
+    const shouldSendWelcomeEmail = 
+      currentUser.accountVerified === false && 
+      updates.accountVerified === true;
+
     // Prevent password updates through this endpoint
     delete updates.password;
     delete updates.emailVerificationToken;
@@ -193,6 +209,17 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         message: 'User not found'
       });
       return;
+    }
+
+    // Send welcome email if account was just verified
+    if (shouldSendWelcomeEmail) {
+      try {
+        const { sendWelcomeEmail } = await import('@/utils/nodemailer');
+        await sendWelcomeEmail(user.email, user.fullName);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the update if email sending fails
+      }
     }
 
     res.json({

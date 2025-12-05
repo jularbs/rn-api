@@ -9,6 +9,7 @@ import {
   ResetPasswordRequest,
   ChangePasswordRequest,
 } from "@/types/authTypes";
+import { sendPasswordChangeNotificationEmail, sendPasswordResetEmail } from "@/utils/nodemailer";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -139,7 +140,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
-      emailVerified: user.emailVerified,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
     };
@@ -226,7 +226,7 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
     // TODO: In a real application, you would send an email with the reset token
     // For now, we'll return the token in the response (remove this in production)
     // Example email service integration:
-    // await sendPasswordResetEmail(user.email, resetToken);
+    await sendPasswordResetEmail(user.email, user.fullName, resetToken);
 
     res.json({
       success: true,
@@ -249,7 +249,8 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
 // POST /api/auth/reset-password - Reset password using token
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { token, newPassword, confirmPassword }: ResetPasswordRequest = req.body;
+    console.log("Reset Password Request Body:", req.body);
+    const { token, password, confirm }: ResetPasswordRequest = req.body;
 
     // Validation
     if (!token) {
@@ -260,7 +261,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!newPassword) {
+    if (!password) {
       res.status(400).json({
         success: false,
         message: "New password is required",
@@ -268,7 +269,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!confirmPassword) {
+    if (!confirm) {
       res.status(400).json({
         success: false,
         message: "Password confirmation is required",
@@ -276,7 +277,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (password !== confirm) {
       res.status(400).json({
         success: false,
         message: "Passwords do not match",
@@ -285,7 +286,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     }
 
     // Validate password strength
-    if (newPassword.length < 6) {
+    if (password.length < 6) {
       res.status(400).json({
         success: false,
         message: "Password must be at least 6 characters long",
@@ -329,12 +330,15 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     }
 
     // Set new password and clear reset token fields
-    user.password = newPassword;
+    user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
 
     // Save user with new password (password will be hashed by pre-save middleware)
     await user.save();
+
+    // Send Change password notification email
+    await sendPasswordChangeNotificationEmail(user.email, user.fullName);
 
     res.json({
       success: true,
@@ -460,6 +464,7 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     user.password = newPassword;
     await user.save();
 
+    await sendPasswordChangeNotificationEmail(user.email, user.fullName);
     res.json({
       success: true,
       message: "Password changed successfully",
@@ -471,169 +476,6 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     res.status(500).json({
       success: false,
       message: "An error occurred while changing your password. Please try again later.",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
-  }
-};
-
-// GET /api/auth/verify-email - Verify user's email address
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { token, id } = req.query;
-
-    // Validation
-    if (!token || typeof token !== "string") {
-      res.status(400).json({
-        success: false,
-        message: "Verification token is required",
-      });
-      return;
-    }
-
-    // Find user with matching email verification token
-    const user = await UserModel.findOne({
-      _id: id,
-      emailVerificationToken: token,
-    }).select("+emailVerificationToken");
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid or expired verification token",
-      });
-      return;
-    }
-
-    // Check if email is already verified
-    if (user.emailVerified) {
-      res.status(400).json({
-        success: false,
-        message: "Email address is already verified",
-      });
-      return;
-    }
-
-    // Check if user is soft deleted
-    if (user.deletedAt) {
-      res.status(400).json({
-        success: false,
-        message: "Account has been deleted. Please contact support.",
-      });
-      return;
-    }
-
-    // Verify email and clear verification token
-    user.emailVerified = true;
-    user.emailVerificationToken = undefined;
-
-    // Save user
-    await user.save({ validateBeforeSave: false });
-
-    // Generate JWT token for automatic login after email verification
-    const authToken = generateToken(user._id);
-
-    // Return user data without sensitive information
-    const userResponse = {
-      id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      accountVerified: user.accountVerified,
-      createdAt: user.createdAt,
-    };
-
-    res.json({
-      success: true,
-      message: "Email verified successfully. You are now logged in.",
-      data: {
-        user: userResponse,
-        token: authToken,
-        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-      },
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Error in email verification:", err);
-
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while verifying your email. Please try again later.",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
-  }
-};
-
-// POST /api/auth/resend-verification - Resend email verification
-export const resendEmailVerification = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email }: { email: string } = req.body;
-
-    if (!email) {
-      res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
-      return;
-    }
-
-    // Find user by email
-    const user = await UserModel.findOne({ email: email.toLowerCase() }).select("+emailVerificationToken");
-
-    if (!user) {
-      // For security reasons, always return success even if user doesn't exist
-      res.json({
-        success: true,
-        message: "If an account with that email exists and is unverified, a verification email has been sent.",
-      });
-      return;
-    }
-
-    // Check if user is soft deleted
-    if (user.deletedAt) {
-      res.json({
-        success: true,
-        message: "If an account with that email exists and is unverified, a verification email has been sent.",
-      });
-      return;
-    }
-
-    // Check if email is already verified
-    if (user.emailVerified) {
-      res.json({
-        success: true,
-        message: "If an account with that email exists and is unverified, a verification email has been sent.",
-      });
-      return;
-    }
-
-    // Generate new verification token if none exists
-    if (!user.emailVerificationToken) {
-      const { randomBytes } = await import("crypto");
-      user.emailVerificationToken = randomBytes(32).toString("hex");
-    }
-
-    // Save user with verification token
-    await user.save({ validateBeforeSave: false });
-
-    // TODO: In a real application, you would send an email with the verification token
-    // For now, we'll return the token in the response (remove this in production)
-    // Example email service integration:
-    // await sendEmailVerificationEmail(user.email, user.emailVerificationToken);
-
-    res.json({
-      success: true,
-      message: "If an account with that email exists and is unverified, a verification email has been sent.",
-      // Remove this in production - only for development/testing
-      verificationToken: process.env.NODE_ENV === "development" ? user.emailVerificationToken : undefined,
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Error in resend email verification:", err);
-
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while processing your request. Please try again later.",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }

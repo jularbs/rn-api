@@ -14,7 +14,6 @@ export interface IUser {
   deletedBy?: Types.ObjectId;
   lastLogin?: Date;
   accountVerified: boolean;
-  emailVerified: boolean;
   emailVerificationToken?: string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
@@ -35,11 +34,6 @@ export interface IUser {
 
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
-})
-@pre<User>("save", function (this: DocumentType<User>) {
-  if (this.isNew && !this.emailVerified) {
-    this.emailVerificationToken = randomBytes(32).toString("hex");
-  }
 })
 /* eslint-disable-next-line */
 @pre<User>(/^find/, function (this: any) {
@@ -110,9 +104,6 @@ export class User {
 
   @prop({ type: Boolean, default: false })
   public accountVerified!: boolean;
-
-  @prop({ type: Boolean, default: false })
-  public emailVerified!: boolean;
 
   @prop({ type: String, select: false })
   public emailVerificationToken?: string;

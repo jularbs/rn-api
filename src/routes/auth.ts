@@ -8,8 +8,6 @@ import {
   requestPasswordReset,
   resetPassword,
   changePassword,
-  verifyEmail,
-  resendEmailVerification,
 } from "@/controllers/authController";
 
 const router = express.Router();
@@ -48,16 +46,10 @@ router.get("/v1/auth/validate", authenticate, (_req, res) => {
 // POST /v1/auth/request-password-reset - Request password reset
 router.post("/v1/auth/request-password-reset", authRateLimit, requestPasswordReset);
 
-// POST /v1/auth/reset-password - Reset password using token
-router.post("/v1/auth/reset-password", authRateLimit, resetPassword);
+// PUT /v1/auth/reset-password - Reset password using token
+router.put("/v1/auth/reset-password", authRateLimit, resetPassword);
 
 // PUT /v1/auth/change-password - Change password for logged-in users
 router.put("/v1/auth/change-password", authenticate, authRateLimit, changePassword);
-
-// GET /v1/auth/verify-email - Verify user's email address
-router.get("/v1/auth/verify-email", authRateLimit, verifyEmail);
-
-// POST /v1/auth/resend-verification - Resend email verification
-router.post("/v1/auth/resend-verification", authRateLimit, resendEmailVerification);
 
 export default router;

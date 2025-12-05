@@ -44,7 +44,6 @@ Content-Type: application/json
       "email": "john@example.com",
       "role": "user",
       "isActive": true,
-      "emailVerified": false,
       "createdAt": "2025-08-27T12:00:00.000Z"
     },
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",

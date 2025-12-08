@@ -33,6 +33,7 @@ export const getMessages = async (req: Request, res: Response) => {
     const messages = await MessageModel.find(filter)
       .select("-message")
       .populate("readBy", "fullName")
+      .populate("reason", "reason")
       .populate("deletedBy", "fullName")
       .populate("stationId", "name")
       .sort({ createdAt: -1 })
@@ -146,6 +147,7 @@ export const getMessageById = async (req: Request, res: Response) => {
 
     const message = await MessageModel.findById(messageId)
       .populate("stationId", "name")
+      .populate("reason", "reason")
       .populate("readBy", "fullName")
       .populate("deletedBy", "fullName")
       .exec();
@@ -163,7 +165,7 @@ export const getMessageById = async (req: Request, res: Response) => {
 export const createMessage = async (req: Request, res: Response) => {
   try {
     const { stationId, reason, fullName, emailAddress, contactNumber, message } = req.body;
-    
+
     // Remove extra whitespace and line breaks from message
     const cleanedMessage = sanitize(message).replace(/\s+/g, " ").trim();
 

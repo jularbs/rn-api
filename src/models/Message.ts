@@ -5,7 +5,7 @@ import validator from "validator";
 export interface IMessage {
   _id: Types.ObjectId;
   stationId: Types.ObjectId;
-  reason: string;
+  reason: Types.ObjectId;
   fullName: string;
   emailAddress: string;
   contactNumber: string;
@@ -45,12 +45,11 @@ export class Message {
   public stationId!: Types.ObjectId;
 
   @prop({
-    type: String,
+    ref: "Recepient",
+    type: Types.ObjectId,
     required: [true, "Reason is required"],
-    trim: true,
-    maxlength: [100, "Reason cannot exceed 100 characters"],
   })
-  public reason!: string;
+  public reason!: Types.ObjectId;
 
   @prop({
     type: String,

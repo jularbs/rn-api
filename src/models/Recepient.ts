@@ -54,7 +54,6 @@ export class Recepient implements IRecepient {
     trim: true,
     minlength: [3, "Reason must be at least 3 characters long"],
     maxlength: [100, "Reason cannot exceed 100 characters"],
-    unique: true,
   })
   reason!: string;
 

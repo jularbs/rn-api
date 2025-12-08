@@ -7,16 +7,6 @@ export const createRecepient = async (req: Request, res: Response): Promise<void
   try {
     const recepientData = req.body;
 
-    // Check if recepient with the same reason already exists
-    const existingRecepient = await RecepientModel.findOne({ reason: recepientData.reason });
-    if (existingRecepient) {
-      res.status(400).json({
-        success: false,
-        message: "Recepient with this reason already exists",
-      });
-      return;
-    }
-
     // Create new recepient
     const recepient = new RecepientModel(recepientData);
     await recepient.save();
@@ -105,9 +95,9 @@ export const getAllRecepients = async (req: Request, res: Response): Promise<voi
     const query: Record<string, unknown> = {};
 
     if (req.user) {
+      if (isActive !== undefined) query.isActive = isActive === "true";
+    } else {
       query.isActive = true;
-    } else if (isActive !== undefined) {
-      query.isActive = isActive === "true";
     }
 
     if (search) {
@@ -166,22 +156,6 @@ export const updateRecepient = async (req: Request, res: Response): Promise<void
         message: "Invalid recepient ID format",
       });
       return;
-    }
-
-    // Check if reason is being updated and if it already exists
-    if (updates.reason) {
-      const existingRecepient = await RecepientModel.findOne({
-        reason: updates.reason,
-        _id: { $ne: id },
-      });
-
-      if (existingRecepient) {
-        res.status(400).json({
-          success: false,
-          message: "Recepient with this reason already exists",
-        });
-        return;
-      }
     }
 
     const recepient = await RecepientModel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });

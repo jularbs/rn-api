@@ -23,6 +23,7 @@ import jockRoutes from "./routes/jocks";
 import mediaRoutes from "./routes/media";
 import postsRoutes from "./routes/posts";
 import programsRoutes from "./routes/programs";
+import messagesRoutes from "./routes/messages";
 
 //import middlewares
 import { createRateLimiter, corsConfig } from "./middleware";
@@ -77,6 +78,7 @@ app.use("/", jockRoutes);
 app.use("/", mediaRoutes);
 app.use("/", postsRoutes);
 app.use("/", programsRoutes);
+app.use("/", messagesRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {

@@ -89,7 +89,8 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, message: "Message marked as read" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error", error });
+    console.log(error);
+    res.status(500).json({ success: false, message: "There was a problem marking the message as read", error });
   }
 };
 
@@ -114,7 +115,8 @@ export const markMessageAsUnread = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, message: "Message marked as unread" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error", error });
+    console.log(error);
+    res.status(500).json({ success: false, message: "There was a problem marking the message as unread", error });
   }
 };
 

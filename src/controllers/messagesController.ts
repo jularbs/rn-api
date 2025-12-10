@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { MessageModel } from "../models/Message";
 import sanitize from "mongo-sanitize";
+import { RecepientModel } from "@/models/Recepient";
+import { sendEmail } from "@/utils/nodemailer";
 
 // Controller to handle message-related operations
 
@@ -171,6 +173,10 @@ export const createMessage = async (req: Request, res: Response) => {
     // Remove extra whitespace and line breaks from message
     const cleanedMessage = sanitize(message).replace(/\s+/g, " ").trim();
 
+    if (reason && !Types.ObjectId.isValid(reason)) {
+      return res.status(400).json({ success: false, message: "Invalid Reason" });
+    }
+
     const newMessage = new MessageModel({
       stationId: sanitize(stationId),
       reason: sanitize(reason),
@@ -184,7 +190,29 @@ export const createMessage = async (req: Request, res: Response) => {
 
     await newMessage.save();
 
-    res.status(201).json({ success: true, data: newMessage });
+    res.status(201).json({ success: true, data: newMessage, message: "Inquiry has been sent successfully" });
+
+    const reasonDoc = reason ? await RecepientModel.findById(reason) : null;
+    if (reasonDoc) {
+      //Send notification to recepients
+      if (reasonDoc.email) {
+        const mailBody = {
+          to: reasonDoc.email,
+          subject: `Received inquiry: ${reasonDoc.reason}`,
+          body: `<p>You have received a new message.</p>
+                <p><strong>Details:</strong></p>
+                Full Name: ${fullName}<br/>
+                Email: ${emailAddress}<br/>
+                Contact Number: ${contactNumber}<br/><br/>
+                <strong>Message:</strong><br/>
+                <p style="white-space: pre-wrap;">${sanitize(message)}</p>
+                <br/><br/>
+                -- <br>This is an automated message.`,
+          isHtml: true,
+        };
+        sendEmail(mailBody).catch(console.error);
+      }
+    }
   } catch (error) {
     console.log(error);
     res

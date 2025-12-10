@@ -289,6 +289,7 @@ export class S3Helper {
     const originalSize = buffer.length;
 
     const compressedBuffer = await sharp(buffer)
+      .rotate()
       .resize(options.maxWidth, options.maxHeight, {
         fit: "inside",
         withoutEnlargement: true,
@@ -320,6 +321,7 @@ export class S3Helper {
     const originalSize = buffer.length;
 
     const compressedBuffer = await sharp(buffer)
+      .rotate()
       .resize(options.maxWidth, options.maxHeight, {
         fit: "inside",
         withoutEnlargement: true,

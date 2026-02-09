@@ -9,7 +9,6 @@ import {
   ResetPasswordRequest,
   ChangePasswordRequest,
 } from "@/types/authTypes";
-import { sendPasswordChangeNotificationEmail, sendPasswordResetEmail } from "@/utils/nodemailer";
 
 // POST /api/auth/register - Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -223,9 +222,7 @@ export const requestPasswordReset = async (req: Request, res: Response): Promise
     // Save user with reset token
     await user.save({ validateBeforeSave: false });
 
-    // TODO: In a real application, you would send an email with the reset token
-    // For now, we'll return the token in the response (remove this in production)
-    // Example email service integration:
+    const sendPasswordResetEmail = require("@/utils/nodemailer").sendPasswordResetEmail;
     await sendPasswordResetEmail(user.email, user.fullName, resetToken);
 
     res.json({
@@ -338,6 +335,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await user.save();
 
     // Send Change password notification email
+    const sendPasswordChangeNotificationEmail = require("@/utils/nodemailer").sendPasswordChangeNotificationEmail;
     await sendPasswordChangeNotificationEmail(user.email, user.fullName);
 
     res.json({
@@ -464,6 +462,7 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     user.password = newPassword;
     await user.save();
 
+    const sendPasswordChangeNotificationEmail = require("@/utils/nodemailer").sendPasswordChangeNotificationEmail;
     await sendPasswordChangeNotificationEmail(user.email, user.fullName);
     res.json({
       success: true,

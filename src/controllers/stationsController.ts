@@ -32,8 +32,8 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
     }
 
     // Pagination
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = parseInt(limit as string, 10) || 10;
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10); //Removed default limit to allow fetching all stations when limit query is set to 0
     const skip = (pageNum - 1) * limitNum;
 
     // Get stations with pagination
@@ -45,7 +45,7 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
 
     // Get total count for pagination
     const total = await StationModel.countDocuments(filter);
-    const totalPages = Math.ceil(total / limitNum);
+    const totalPages = limitNum ? Math.ceil(total / limitNum) : 1; //set totalPages to 1 if limit is not provided to avoid division by zero
 
     res.json({
       success: true,

@@ -42,6 +42,7 @@ export interface IStation {
 })
 @index({ locationGroup: 1 })
 @index({ status: 1 })
+@index({ default: -1, name: 1 })
 @index({ createdAt: -1 })
 @index({ deletedAt: -1 })
 @modelOptions({
@@ -81,7 +82,7 @@ export class Station {
 
   @prop({
     type: String,
-    trim: true, 
+    trim: true,
     maxlength: [200, "Address cannot exceed 200 characters"],
   })
   public address?: string;
@@ -317,11 +318,11 @@ export class Station {
 
   // Static method to set a station as default and unset all others
   public static async setDefaultStation(stationId: string | Types.ObjectId) {
-    await StationModel.updateMany({}, { default: false });    
+    await StationModel.updateMany({}, { default: false });
     return StationModel.findByIdAndUpdate(stationId, { default: true }, { new: true });
   }
 
-    // Static method to find stations with logos
+  // Static method to find stations with logos
   public static async getDefaultStation() {
     return StationModel.findOne({
       default: true,

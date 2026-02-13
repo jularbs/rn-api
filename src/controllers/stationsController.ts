@@ -38,7 +38,7 @@ export const getAllStations = async (req: Request, res: Response): Promise<void>
 
     // Get stations with pagination
     const stations = await StationModel.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ default: -1, name: 1 })
       .skip(skip)
       .limit(limitNum)
       .populate("logoImage", "key bucket url mimeType");

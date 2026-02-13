@@ -361,9 +361,9 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
 
       const featuredImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "featured-image.jpg", {
         folder: "posts/featured-images",
-        quality: 95,
-        maxWidth: 750,
-        maxHeight: 500,
+        quality: 100,
+        maxWidth: 1200,
+        maxHeight: 800,
       });
 
       const featuredImageDoc = {
@@ -692,9 +692,9 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
 
       const featuredImageResult = await s3Helper.uploadFile(fileBuffer, file.originalFilename || "featured-image.jpg", {
         folder: "posts/featured-images",
-        quality: 95,
-        maxWidth: 750,
-        maxHeight: 500,
+        quality: 100,
+        maxWidth: 1200,
+        maxHeight: 800,
       });
 
       const featuredImageDoc = {

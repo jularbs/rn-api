@@ -23,7 +23,7 @@ import { stripHtml } from "string-strip-html";
 // GET /api/posts - Get all posts with advanced filtering and pagination
 export const getPosts = async (
   req: Request<{}, PostListResponse, {}, PostQueryParams>,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const {
@@ -133,16 +133,15 @@ export const getPosts = async (
       }
     }
 
-    // Build sort object
-    const sort: Record<string, 1 | -1> = {};
-    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+    // // Build sort object
+    const sort = { isFeatured: -1, [sortBy]: sortOrder === "asc" ? 1 : -1 } as Record<string, 1 | -1>; // Always sort by featured first
 
     // Execute query
     const [posts, total] = await Promise.all([
       PostModel.find(filter)
         .lean()
         .select(
-          "title slug excerpt author categories tags type status publishedAt thumbnailImage featuredImage isFeatured viewCount videoDuration readingTime"
+          "title slug excerpt author categories tags type status publishedAt thumbnailImage featuredImage isFeatured viewCount videoDuration readingTime",
         )
         .sort(sort)
         .skip(skip)
@@ -318,7 +317,7 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
 
     // Validate category IDs
     const validCategoryIds = categories.filter((cat: string | number | ObjectId | ObjectIdLike) =>
-      Types.ObjectId.isValid(cat)
+      Types.ObjectId.isValid(cat),
     );
     if (categories.length !== validCategoryIds.length) {
       res.status(400).json({ message: "Invalid category IDs provided" });
@@ -368,7 +367,7 @@ export const createPost = async (req: Request<{}, {}, CreatePostRequest>, res: R
           quality: 80,
           maxWidth: 300,
           maxHeight: 200,
-        }
+        },
       );
 
       const thumbnailImageDoc = {
@@ -640,7 +639,7 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
     // Validate category IDs
     if (updateData.categories) {
       const validCategoryIds = updateData.categories.filter((cat: string | number | ObjectId | ObjectIdLike) =>
-        Types.ObjectId.isValid(cat)
+        Types.ObjectId.isValid(cat),
       );
       if (updateData.categories.length !== validCategoryIds.length) {
         res.status(400).json({ message: "Invalid category IDs provided" });
@@ -651,7 +650,7 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
     // Validate tag IDs
     if (updateData.tags) {
       const validTagIds = updateData.tags.filter((tag: string | number | ObjectId | ObjectIdLike) =>
-        Types.ObjectId.isValid(tag)
+        Types.ObjectId.isValid(tag),
       );
       if (updateData.tags.length !== validTagIds.length) {
         res.status(400).json({ message: "Invalid tag IDs provided" });
@@ -699,7 +698,7 @@ export const updatePost = async (req: Request<{ id: string }, {}, UpdatePostRequ
           quality: 80,
           maxWidth: 300,
           maxHeight: 200,
-        }
+        },
       );
 
       const thumbnailImageDoc = {
@@ -895,7 +894,7 @@ export const incrementViews = async (req: Request, res: Response): Promise<void>
 // GET /api/posts/:id/related - Get related posts
 export const getRelatedPosts = async (
   req: Request<{ id: string }, {}, {}, RelatedPostsQueryParams>,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -953,7 +952,7 @@ export const getTrendingPosts = async (req: Request, res: Response): Promise<voi
 // GET /api/posts/stats - Get post statistics
 export const getPostStats = async (
   req: Request<{}, PostStatsResponse, {}, PostStatsQueryParams>,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { days = "30" } = req.query;

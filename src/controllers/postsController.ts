@@ -19,6 +19,7 @@ import { MediaModel } from "@/models/Media";
 const { firstValues } = require("formidable/src/helpers/firstValues.js");
 import sanitize from "mongo-sanitize";
 import { stripHtml } from "string-strip-html";
+import { CategoryModel } from "@/models/Category";
 
 // GET /api/posts - Get all posts with advanced filtering and pagination
 export const getPosts = async (
@@ -68,8 +69,27 @@ export const getPosts = async (
 
     // Categories filter (renamed from category)
     if (categories) {
-      const categoryIds = categories.split(",").map((cat: string) => new Types.ObjectId(cat.trim()));
-      filter.categories = { $in: categoryIds };
+      const categoryIds = await Promise.all(
+        categories.split(",").map(async (cat: string) => {
+          //check if categories is object id
+          if (!Types.ObjectId.isValid(cat.trim())) {
+            // fetch for category with slug cat.trim() to get id
+            return new Promise<Types.ObjectId | undefined>((resolve) => {
+              CategoryModel.findOne({ slug: cat.trim() }, "_id").then((category) => {
+                if (category) {
+                  resolve(category._id);
+                } else {
+                  resolve(undefined);
+                }
+              });
+            });
+          } else {
+            return new Types.ObjectId(cat.trim());
+          }
+        }),
+      );
+
+      filter.categories = { $in: categoryIds.filter((id) => id) }; // Filter out undefined values if fetched categories were not found
     }
 
     // Author filter
